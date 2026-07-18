@@ -1,0 +1,12 @@
+node_modules/
+backend/temp/
+backend/downloads/
+__pycache__/
+.venv/
+dist/
+*.pdf
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local

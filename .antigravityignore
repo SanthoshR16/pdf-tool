@@ -1,0 +1,7 @@
+node_modules/
+backend/temp/
+backend/downloads/
+dist/
+.venv/
+__pycache__/
+*.pdf
