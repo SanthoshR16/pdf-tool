@@ -8,11 +8,12 @@ import { FileText } from 'lucide-react';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState('home'); // 'home' | 'terms' | 'privacy' | 'contact'
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const renderPage = () => {
     switch (currentPage) {
       case 'home':
-        return <Home />;
+        return <Home setIsProcessing={setIsProcessing} />;
       case 'terms':
         return <Terms setCurrentPage={setCurrentPage} />;
       case 'privacy':
@@ -20,7 +21,7 @@ export default function App() {
       case 'contact':
         return <Contact setCurrentPage={setCurrentPage} />;
       default:
-        return <Home />;
+        return <Home setIsProcessing={setIsProcessing} />;
     }
   };
 
@@ -77,7 +78,7 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <Footer currentPage={currentPage} setCurrentPage={setCurrentPage} />
+      {!isProcessing && <Footer currentPage={currentPage} setCurrentPage={setCurrentPage} />}
     </div>
   );
 }

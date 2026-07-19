@@ -49,10 +49,13 @@ def get_job_status(job_id: str) -> dict:
             pass
     return None
 
-def update_job_status(job_id: str, status: str, download_url: str = None, error_message: str = None):
+gs_lock = threading.Lock()
+
+def update_job_status(job_id: str, status: str, progress: int = 0, download_url: str = None, error_message: str = None):
     path = os.path.join(TEMP_DIR, f"job_{job_id}.json")
     data = {
         "status": status,
+        "progress": progress,
         "download_url": download_url,
         "error_message": error_message,
         "updated_at": time.time()
@@ -65,15 +68,36 @@ def update_job_status(job_id: str, status: str, download_url: str = None, error_
 
 # Background worker functions
 def run_combine_job(job_id: str, temp_paths: List[str], output_path: str, output_id: str):
+    from pypdf import PdfWriter, PdfReader
+    writer = PdfWriter()
     try:
-        update_job_status(job_id, "processing")
-        merge_pdfs(temp_paths, output_path)
-        update_job_status(job_id, "done", download_url=f"/api/download/{output_id}")
+        update_job_status(job_id, "processing", progress=0)
+        total_files = len(temp_paths)
+        for idx, path in enumerate(temp_paths):
+            if not os.path.exists(path):
+                raise ValueError(f"File not found: {path}")
+            if not check_pdf_header(path):
+                raise ValueError(f"Invalid PDF file signature: {os.path.basename(path)}")
+            try:
+                PdfReader(path)
+            except Exception as e:
+                raise ValueError(f"Corrupted or unsupported PDF structure in '{os.path.basename(path)}'. Details: {str(e)}")
+            
+            writer.append(path)
+            
+            # Progress based on files processed
+            progress = int(((idx + 1) / total_files) * 100)
+            update_job_status(job_id, "processing", progress=min(progress, 99))
+            
+        writer.write(output_path)
+        writer.close()
+        update_job_status(job_id, "done", progress=100, download_url=f"/api/download/{output_id}")
     except Exception as e:
         import traceback
         traceback.print_exc()
         update_job_status(job_id, "error", error_message=str(e))
     finally:
+        writer.close()
         for path in temp_paths:
             if os.path.exists(path):
                 try:
@@ -83,9 +107,20 @@ def run_combine_job(job_id: str, temp_paths: List[str], output_path: str, output
 
 def run_compress_job(job_id: str, temp_path: str, output_path: str, output_id: str, level: str):
     try:
-        update_job_status(job_id, "processing")
-        compress_pdf(temp_path, output_path, level=level)
-        update_job_status(job_id, "done", download_url=f"/api/download/{output_id}")
+        update_job_status(job_id, "processing", progress=0)
+        
+        # Single gs process lock control
+        with gs_lock:
+            def on_progress(p):
+                update_job_status(job_id, "processing", progress=p)
+            
+            compress_pdf(temp_path, output_path, level=level, progress_callback=on_progress)
+            
+        update_job_status(job_id, "done", progress=100, download_url=f"/api/download/{output_id}")
+    except TimeoutError as e:
+        import traceback
+        traceback.print_exc()
+        update_job_status(job_id, "error", error_message=str(e))
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -208,7 +243,7 @@ async def combine(background_tasks: BackgroundTasks, files: List[UploadFile] = F
     output_path = os.path.join(DOWNLOADS_DIR, output_filename)
     
     # Initialize job status to processing
-    update_job_status(job_id, "processing")
+    update_job_status(job_id, "processing", progress=0)
     
     # Queue processing task
     background_tasks.add_task(run_combine_job, job_id, temp_paths, output_path, output_id)
@@ -228,7 +263,7 @@ async def compress(background_tasks: BackgroundTasks, file: UploadFile = File(..
     output_path = os.path.join(DOWNLOADS_DIR, output_filename)
     
     # Initialize job status to processing
-    update_job_status(job_id, "processing")
+    update_job_status(job_id, "processing", progress=0)
     
     # Queue processing task
     background_tasks.add_task(run_compress_job, job_id, temp_path, output_path, output_id, level)
@@ -241,7 +276,10 @@ def get_status(job_id: str):
     if not status_data:
         raise HTTPException(status_code=404, detail="Job not found or has expired")
     
-    response_data = {"status": status_data["status"]}
+    response_data = {
+        "status": status_data["status"],
+        "progress": status_data.get("progress", 0)
+    }
     if status_data["status"] == "done":
         response_data["download_url"] = status_data.get("download_url")
     elif status_data["status"] == "error":

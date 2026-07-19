@@ -1,6 +1,7 @@
 import os
 import subprocess
 import shutil
+import time
 from typing import List
 from pypdf import PdfWriter, PdfReader
 
@@ -60,7 +61,7 @@ def find_ghostscript_executable() -> str:
     # Default fallback to 'gs' which represents the standard command
     return "gs"
 
-def compress_pdf(input_path: str, output_path: str, level: str = "medium") -> None:
+def compress_pdf(input_path: str, output_path: str, level: str = "medium", progress_callback=None) -> None:
     """Compresses a PDF file using Ghostscript."""
     if not os.path.exists(input_path):
         raise ValueError(f"Input file not found: {input_path}")
@@ -68,7 +69,8 @@ def compress_pdf(input_path: str, output_path: str, level: str = "medium") -> No
         raise ValueError("Invalid PDF format. Only valid PDF files can be compressed.")
         
     try:
-        PdfReader(input_path)
+        reader = PdfReader(input_path)
+        total_pages = len(reader.pages)
     except Exception as e:
         raise ValueError(f"Corrupted or unsupported PDF structure. Details: {str(e)}")
 
@@ -89,18 +91,49 @@ def compress_pdf(input_path: str, output_path: str, level: str = "medium") -> No
         "-dCompatibilityLevel=1.4",
         f"-dPDFSETTINGS={gs_setting}",
         "-dNOPAUSE",
-        "-dQUIET",
         "-dBATCH",
         f"-sOutputFile={output_path}",
         input_path
     ]
     
     try:
-        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
-    except subprocess.CalledProcessError as e:
-        error_msg = e.stderr or e.stdout or "Unknown Ghostscript error"
-        raise RuntimeError(f"Ghostscript execution failed: {error_msg}")
+        process = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            bufsize=1
+        )
     except FileNotFoundError:
         raise RuntimeError(
             "Ghostscript executable not found. Make sure Ghostscript is installed and added to the environment PATH."
         )
+
+    start_time = time.time()
+    while True:
+        # Check timeout (4 minutes = 240 seconds)
+        if time.time() - start_time > 240:
+            process.kill()
+            raise TimeoutError("File too large for free-tier processing, try a smaller file or Low/Medium setting")
+
+        # Read output line-by-line if process is still running
+        line = process.stdout.readline()
+        if not line and process.poll() is not None:
+            break
+            
+        if line and "Page " in line:
+            try:
+                parts = line.split("Page")
+                if len(parts) > 1:
+                    page_str = parts[-1].strip().split()[0]
+                    page_num = int(page_str)
+                    if progress_callback and total_pages > 0:
+                        progress = int((page_num / total_pages) * 100)
+                        progress_callback(min(progress, 99))
+            except Exception:
+                pass
+                
+    stdout, stderr = process.communicate()
+    if process.returncode != 0:
+        error_msg = stderr or stdout or "Unknown Ghostscript error"
+        raise RuntimeError(f"Ghostscript execution failed: {error_msg}")
