@@ -8,16 +8,16 @@ export default function Footer({ currentPage, setCurrentPage }) {
   ];
 
   return (
-    <footer className="w-full border-t border-slate-200 bg-white py-8 mt-auto">
+    <footer className="w-full border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-8 mt-auto transition-colors duration-200">
       <div className="mx-auto max-w-5xl px-4 flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <button 
             onClick={() => setCurrentPage('home')}
-            className="text-lg font-bold tracking-tight text-indigo-600 hover:text-indigo-700 transition"
+            className="text-lg font-bold tracking-tight text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 transition"
           >
             PDF Tool
           </button>
-          <span className="text-slate-400 text-sm">| Free PDF Utilities</span>
+          <span className="text-slate-400 dark:text-slate-500 text-sm">| Free PDF Utilities</span>
         </div>
         
         <nav className="flex items-center gap-6">
@@ -25,8 +25,8 @@ export default function Footer({ currentPage, setCurrentPage }) {
             <button
               key={link.id}
               onClick={() => setCurrentPage(link.id)}
-              className={`text-sm font-medium transition duration-200 hover:text-indigo-600 ${
-                currentPage === link.id ? 'text-indigo-600' : 'text-slate-500'
+              className={`text-sm font-medium transition duration-200 hover:text-indigo-600 dark:hover:text-indigo-400 ${
+                currentPage === link.id ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-400'
               }`}
             >
               {link.label}
@@ -34,7 +34,7 @@ export default function Footer({ currentPage, setCurrentPage }) {
           ))}
         </nav>
         
-        <div className="text-sm text-slate-400 text-center md:text-right">
+        <div className="text-sm text-slate-400 dark:text-slate-500 text-center md:text-right">
           &copy; {new Date().getFullYear()} PDF Tool. All rights reserved.
         </div>
       </div>

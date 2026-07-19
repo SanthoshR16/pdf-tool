@@ -580,7 +580,7 @@ export default function Home({ setIsProcessing }) {
                       </a>
                       
                       <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-normal text-left px-2.5 mt-1 bg-slate-50 dark:bg-slate-900/40 p-2 rounded-lg border border-slate-100 dark:border-slate-800/60">
-                        💡 <strong>Tip:</strong> Enable <em>'Ask where to save each file'</em> in your browser's download settings to choose a folder location every time.
+                        To choose where to save, enable 'Ask where to save each file' in your browser's download settings.
                       </p>
                     </div>
                     

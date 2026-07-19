@@ -7,39 +7,39 @@ export default function Terms({ setCurrentPage }) {
       <div className="mb-8">
         <button
           onClick={() => setCurrentPage('home')}
-          className="text-sm font-medium text-indigo-600 hover:text-indigo-700 transition flex items-center gap-1"
+          className="text-sm font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 transition flex items-center gap-1"
         >
           &larr; Back to Home
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
+      <div className="bg-white/80 dark:bg-slate-900/80 border border-slate-200/50 dark:border-slate-800/50 backdrop-blur-md rounded-2xl p-8 shadow-lg">
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+          <div className="p-3 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl">
             <FileText className="h-6 w-6" />
           </div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Terms & Conditions</h1>
+          <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight font-display">Terms & Conditions</h1>
         </div>
 
-        <p className="text-slate-500 text-sm mb-8">Last Updated: July 2026</p>
+        <p className="text-slate-500 dark:text-slate-400 text-sm mb-8">Last Updated: July 2026</p>
 
-        <div className="space-y-6 text-slate-600 leading-relaxed">
+        <div className="space-y-6 text-slate-600 dark:text-slate-300 leading-relaxed">
           <section>
-            <h2 className="text-xl font-bold text-slate-800 mb-3">1. Description of Service</h2>
+            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-3 font-display">1. Description of Service</h2>
             <p>
               PDF Tool is a free web-based utility that allows users to combine multiple PDF documents and compress existing PDF documents using server-side processing. The service is provided completely free of charge, without watermarks, and does not require registration or user accounts.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-slate-800 mb-3">2. "As Is" Provision & Warranty</h2>
+            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-3 font-display">2. "As Is" Provision & Warranty</h2>
             <p>
               This service is provided <strong>"as is"</strong> and <strong>"as available"</strong>, without any warranties of any kind, express or implied. We do not warrant that the service will be uninterrupted, secure, error-free, or that the processing results will be perfect. You use the service at your own risk.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-slate-800 mb-3">3. File Storage & Deletion Policy</h2>
+            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-3 font-display">3. File Storage & Deletion Policy</h2>
             <p>
               We value your storage limits and privacy. All uploaded and output PDF documents are:
             </p>
@@ -51,7 +51,7 @@ export default function Terms({ setCurrentPage }) {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-slate-800 mb-3">4. User Responsibility</h2>
+            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-3 font-display">4. User Responsibility</h2>
             <p>
               You are solely responsible for the content of the PDF files you upload. You agree not to upload:
             </p>
@@ -63,14 +63,14 @@ export default function Terms({ setCurrentPage }) {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-slate-800 mb-3">5. Limitation of Liability</h2>
+            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-3 font-display">5. Limitation of Liability</h2>
             <p>
               To the maximum extent permitted by applicable law, PDF Tool, its developers, and contributors shall not be liable for any direct, indirect, incidental, special, consequential, or exemplary damages, including but not limited to damages for loss of profits, goodwill, data, or other intangible losses resulting from the use or inability to use this service.
             </p>
           </section>
 
-          <section className="pt-6 border-t border-slate-100">
-            <p className="text-sm text-slate-500">
+          <section className="pt-6 border-t border-slate-100 dark:border-slate-800/80">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               By using PDF Tool, you acknowledge that you have read, understood, and agreed to be bound by these Terms & Conditions.
             </p>
           </section>
