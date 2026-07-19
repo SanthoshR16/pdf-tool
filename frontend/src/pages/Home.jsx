@@ -37,12 +37,12 @@ export default function Home({ setIsProcessing }) {
     setHasDownloaded(false);
   }, [activeTab]);
 
-  // Set processing state for footer visibility
+  // Set processing state (active backend job running)
   useEffect(() => {
     if (setIsProcessing) {
-      setIsProcessing(files.length > 0 || loading || success !== null);
+      setIsProcessing(loading);
     }
-  }, [files, loading, success, setIsProcessing]);
+  }, [loading, setIsProcessing]);
 
   // Toast auto-hide
   useEffect(() => {

@@ -114,7 +114,7 @@ export default function App() {
       {/* Top Banner Ad - only when not actively processing */}
       {!isProcessing && (
         <div className="mx-auto max-w-5xl w-full px-4 pt-4 animate-fade-in-up">
-          <AdSlot slotId="top-banner-ad" />
+          <AdSlot slot="1234567890" />
         </div>
       )}
 
@@ -122,13 +122,6 @@ export default function App() {
       <main className="flex-grow">
         {renderPage()}
       </main>
-
-      {/* Bottom Footer Ad - only when not actively processing */}
-      {!isProcessing && (
-        <div className="mx-auto max-w-5xl w-full px-4 pb-4 animate-fade-in-up">
-          <AdSlot slotId="bottom-footer-ad" />
-        </div>
-      )}
 
       {/* Footer */}
       {!isProcessing && <Footer currentPage={currentPage} setCurrentPage={setCurrentPage} />}

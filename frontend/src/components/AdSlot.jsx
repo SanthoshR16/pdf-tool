@@ -1,25 +1,28 @@
-import React, { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
-export default function AdSlot({ slotId, className = "" }) {
+export default function AdSlot({ slot, format = 'auto', style = {} }) {
+  const adRef = useRef(null);
+  const pushed = useRef(false);
+
   useEffect(() => {
+    if (pushed.current) return;
     try {
       (window.adsbygoogle = window.adsbygoogle || []).push({});
-    } catch (err) {
-      console.warn("AdSense script not loaded yet or failed to push ad unit:", err);
+      pushed.current = true;
+    } catch (e) {
+      console.error('AdSense error:', e);
     }
   }, []);
 
   return (
-    <div className={`w-full flex justify-center overflow-hidden my-2 max-w-full ${className}`}>
-      {/* Google AdSense Unit */}
-      <ins
-        className="adsbygoogle"
-        style={{ display: 'block', minWidth: '250px', minHeight: '90px' }}
-        data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" // ponytail: replace with real client ID when deploying
-        data-ad-slot={slotId}
-        data-ad-format="auto"
-        data-full-width-responsive="true"
-      ></ins>
-    </div>
+    <ins
+      ref={adRef}
+      className="adsbygoogle"
+      style={{ display: 'block', ...style }}
+      data-ad-client="ca-pub-3017009286992271"
+      data-ad-slot={slot}
+      data-ad-format={format}
+      data-full-width-responsive="true"
+    />
   );
 }
