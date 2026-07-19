@@ -4,6 +4,7 @@ import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Contact from './pages/Contact';
 import Footer from './components/Footer';
+import AdSlot from './components/AdSlot';
 import { FileText, Sun, Moon } from 'lucide-react';
 
 export default function App() {
@@ -95,10 +96,24 @@ export default function App() {
         </div>
       </header>
 
+      {/* Top Banner Ad - only when not actively processing */}
+      {!isProcessing && (
+        <div className="mx-auto max-w-5xl w-full px-4 pt-4 animate-fade-in-up">
+          <AdSlot slotId="top-banner-ad" />
+        </div>
+      )}
+
       {/* Main Content Area */}
       <main className="flex-grow">
         {renderPage()}
       </main>
+
+      {/* Bottom Footer Ad - only when not actively processing */}
+      {!isProcessing && (
+        <div className="mx-auto max-w-5xl w-full px-4 pb-4 animate-fade-in-up">
+          <AdSlot slotId="bottom-footer-ad" />
+        </div>
+      )}
 
       {/* Footer */}
       {!isProcessing && <Footer currentPage={currentPage} setCurrentPage={setCurrentPage} />}
