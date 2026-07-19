@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Phone, Mail, Clock, Send, CheckCircle } from 'lucide-react';
+import { Mail, Clock, Send, CheckCircle } from 'lucide-react';
 
 export default function Contact({ setCurrentPage }) {
   const [form, setForm] = useState({ name: '', email: '', message: '' });
@@ -42,24 +42,12 @@ export default function Contact({ setCurrentPage }) {
             <div className="space-y-6">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-white/10 rounded-xl">
-                  <Phone className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-xs text-indigo-200 uppercase font-bold tracking-wider">Call or WhatsApp</p>
-                  <a href="tel:+917760969517" className="text-lg font-bold hover:underline">
-                    +91 7760969517
-                  </a>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-white/10 rounded-xl">
                   <Mail className="h-5 w-5" />
                 </div>
                 <div>
                   <p className="text-xs text-indigo-200 uppercase font-bold tracking-wider">Email support</p>
-                  <a href="mailto:support@pdftool.com" className="text-sm font-semibold hover:underline">
-                    support@pdftool.com
+                  <a href="mailto:santoshsanthu466@gmail.com" className="text-sm font-semibold hover:underline">
+                    santoshsanthu466@gmail.com
                   </a>
                 </div>
               </div>
@@ -77,7 +65,7 @@ export default function Contact({ setCurrentPage }) {
           </div>
 
           <div className="mt-8 pt-6 border-t border-white/10 text-xs text-indigo-200">
-            PDF Tool is hosted globally. Standard carrier rates may apply for calls.
+            PDF Tool is hosted globally.
           </div>
         </div>
 
