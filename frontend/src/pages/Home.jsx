@@ -154,17 +154,6 @@ export default function Home() {
     setSuccess(null);
     setProgress(10);
 
-    // Simulate progress while uploading and processing
-    const progressInterval = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 90) {
-          clearInterval(progressInterval);
-          return 90;
-        }
-        return prev + 5;
-      });
-    }, 400);
-
     const formData = new FormData();
     const endpoint = activeTab === 'combine' ? '/api/combine' : '/api/compress';
 
@@ -178,6 +167,7 @@ export default function Home() {
     }
 
     try {
+      // Step 1: Submit job
       const response = await fetch(`${API_BASE}${endpoint}`, {
         method: 'POST',
         body: formData,
@@ -188,23 +178,57 @@ export default function Home() {
         throw new Error(errData.detail || `Server returned status ${response.status}`);
       }
 
-      const data = await response.json();
-      setProgress(100);
-      clearInterval(progressInterval);
+      const resData = await response.json();
+      const jobId = resData.job_id;
+      if (!jobId) {
+        throw new Error('No job ID received from server.');
+      }
+
+      setProgress(20);
+
+      // Step 2: Poll status endpoint
+      let isDone = false;
+      let statusData = null;
+      let currentProgress = 20;
+
+      while (!isDone) {
+        // Wait 2 seconds
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        const statusResponse = await fetch(`${API_BASE}/api/status/${jobId}`);
+        if (!statusResponse.ok) {
+          const errData = await statusResponse.json().catch(() => ({}));
+          throw new Error(errData.detail || `Failed to check job status: ${statusResponse.status}`);
+        }
+
+        statusData = await statusResponse.json();
+
+        if (statusData.status === 'done') {
+          isDone = true;
+          setProgress(100);
+        } else if (statusData.status === 'error') {
+          throw new Error(statusData.error_message || 'An error occurred during PDF processing.');
+        } else {
+          // 'processing'
+          currentProgress = Math.min(currentProgress + 10, 95);
+          setProgress(currentProgress);
+        }
+      }
 
       // Handle download success
+      const downloadUrl = `${API_BASE}${statusData.download_url}`;
+      const filename = activeTab === 'combine' ? 'combined.pdf' : 'compressed.pdf';
       setSuccess({
-        downloadUrl: `${API_BASE}${data.download_url}`,
-        filename: data.filename
+        downloadUrl,
+        filename
       });
 
       // Automatically trigger the download
       setTimeout(() => {
-        triggerDownload(`${API_BASE}${data.download_url}`);
+        triggerDownload(downloadUrl);
       }, 500);
 
     } catch (err) {
-      clearInterval(progressInterval);
       setError(err.message || 'An unexpected error occurred during processing.');
       setProgress(0);
     } finally {

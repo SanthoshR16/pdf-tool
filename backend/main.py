@@ -2,6 +2,7 @@ import os
 import uuid
 import threading
 import time
+import json
 from typing import List
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
@@ -33,6 +34,69 @@ DOWNLOADS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "downlo
 os.makedirs(TEMP_DIR, exist_ok=True)
 os.makedirs(DOWNLOADS_DIR, exist_ok=True)
 
+# Helper functions to get and update job status
+def get_job_status(job_id: str) -> dict:
+    try:
+        uuid.UUID(job_id)
+    except ValueError:
+        return None
+    path = os.path.join(TEMP_DIR, f"job_{job_id}.json")
+    if os.path.exists(path):
+        try:
+            with open(path, "r") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return None
+
+def update_job_status(job_id: str, status: str, download_url: str = None, error_message: str = None):
+    path = os.path.join(TEMP_DIR, f"job_{job_id}.json")
+    data = {
+        "status": status,
+        "download_url": download_url,
+        "error_message": error_message,
+        "updated_at": time.time()
+    }
+    try:
+        with open(path, "w") as f:
+            json.dump(data, f)
+    except Exception as e:
+        print(f"Failed to update job status {job_id}: {e}")
+
+# Background worker functions
+def run_combine_job(job_id: str, temp_paths: List[str], output_path: str, output_id: str):
+    try:
+        update_job_status(job_id, "processing")
+        merge_pdfs(temp_paths, output_path)
+        update_job_status(job_id, "done", download_url=f"/api/download/{output_id}")
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        update_job_status(job_id, "error", error_message=str(e))
+    finally:
+        for path in temp_paths:
+            if os.path.exists(path):
+                try:
+                    os.remove(path)
+                except Exception:
+                    pass
+
+def run_compress_job(job_id: str, temp_path: str, output_path: str, output_id: str, level: str):
+    try:
+        update_job_status(job_id, "processing")
+        compress_pdf(temp_path, output_path, level=level)
+        update_job_status(job_id, "done", download_url=f"/api/download/{output_id}")
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        update_job_status(job_id, "error", error_message=str(e))
+    finally:
+        if os.path.exists(temp_path):
+            try:
+                os.remove(temp_path)
+            except Exception:
+                pass
+
 # Run file cleanup in a background thread to remove files older than 1 hour
 def file_cleanup_worker():
     while True:
@@ -61,6 +125,15 @@ def startup_event():
     # Start cleanup thread
     cleanup_thread = threading.Thread(target=file_cleanup_worker, daemon=True)
     cleanup_thread.start()
+    
+    # Show existing IDs in downloads store
+    existing_ids = []
+    if os.path.exists(DOWNLOADS_DIR):
+        for filename in os.listdir(DOWNLOADS_DIR):
+            if "_" in filename:
+                parts = filename.split("_")
+                existing_ids.append(parts[0])
+    print(f"Startup: Existing IDs in store: {existing_ids}")
 
 # Helper to validate and save uploaded files
 async def save_upload(file: UploadFile) -> str:
@@ -109,7 +182,7 @@ def health():
     return {"status": "ok", "message": "PDF Tool Backend is running"}
 
 @app.post("/api/combine")
-async def combine(files: List[UploadFile] = File(...)):
+async def combine(background_tasks: BackgroundTasks, files: List[UploadFile] = File(...)):
     if not files or len(files) < 1:
         raise HTTPException(status_code=400, detail="No files uploaded")
         
@@ -119,61 +192,65 @@ async def combine(files: List[UploadFile] = File(...)):
         for file in files:
             path = await save_upload(file)
             temp_paths.append(path)
-            
-        # Create output file
-        output_id = str(uuid.uuid4())
-        output_filename = f"{output_id}_combined.pdf"
-        output_path = os.path.join(DOWNLOADS_DIR, output_filename)
-        
-        # Merge PDFs
-        merge_pdfs(temp_paths, output_path)
-        
-        return {
-            "download_url": f"/api/download/{output_id}",
-            "filename": "combined.pdf"
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"PDF merging failed: {str(e)}")
-    finally:
-        # Clean up input files immediately after merge
+    except Exception:
+        # If any file validation/saving fails, clean up whatever we've saved so far
         for path in temp_paths:
             if os.path.exists(path):
                 try:
                     os.remove(path)
                 except Exception:
                     pass
+        raise
+
+    job_id = str(uuid.uuid4())
+    output_id = str(uuid.uuid4())
+    output_filename = f"{output_id}_combined.pdf"
+    output_path = os.path.join(DOWNLOADS_DIR, output_filename)
+    
+    # Initialize job status to processing
+    update_job_status(job_id, "processing")
+    
+    # Queue processing task
+    background_tasks.add_task(run_combine_job, job_id, temp_paths, output_path, output_id)
+    
+    return {"job_id": job_id}
 
 @app.post("/api/compress")
-async def compress(file: UploadFile = File(...), level: str = Form("medium")):
+async def compress(background_tasks: BackgroundTasks, file: UploadFile = File(...), level: str = Form("medium")):
     # Validate level
     if level.lower() not in ["low", "medium", "high"]:
         raise HTTPException(status_code=400, detail="Invalid compression level. Must be 'low', 'medium', or 'high'.")
         
     temp_path = await save_upload(file)
+    job_id = str(uuid.uuid4())
     output_id = str(uuid.uuid4())
     output_filename = f"{output_id}_compressed.pdf"
     output_path = os.path.join(DOWNLOADS_DIR, output_filename)
     
-    try:
-        compress_pdf(temp_path, output_path, level=level)
-        return {
-            "download_url": f"/api/download/{output_id}",
-            "filename": "compressed.pdf"
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"PDF compression failed: {str(e)}")
-    finally:
-        # Clean up input file immediately after compression
-        if os.path.exists(temp_path):
-            try:
-                os.remove(temp_path)
-            except Exception:
-                pass
+    # Initialize job status to processing
+    update_job_status(job_id, "processing")
+    
+    # Queue processing task
+    background_tasks.add_task(run_compress_job, job_id, temp_path, output_path, output_id, level)
+    
+    return {"job_id": job_id}
+
+@app.get("/api/status/{job_id}")
+def get_status(job_id: str):
+    status_data = get_job_status(job_id)
+    if not status_data:
+        raise HTTPException(status_code=404, detail="Job not found or has expired")
+    
+    response_data = {"status": status_data["status"]}
+    if status_data["status"] == "done":
+        response_data["download_url"] = status_data.get("download_url")
+    elif status_data["status"] == "error":
+        response_data["error_message"] = status_data.get("error_message") or "Unknown processing error"
+        
+    return response_data
 
 @app.get("/api/download/{id}")
-def download(id: str, background_tasks: BackgroundTasks):
+def download(id: str):
     # Prevent directory traversal attacks by validating uuid format
     try:
         uuid.UUID(id)
@@ -195,19 +272,16 @@ def download(id: str, background_tasks: BackgroundTasks):
                 break
             
     if not target_file or not os.path.exists(target_file):
+        existing_ids = []
+        if os.path.exists(DOWNLOADS_DIR):
+            for filename in os.listdir(DOWNLOADS_DIR):
+                if "_" in filename:
+                    existing_ids.append(filename.split("_")[0])
+        import logging
+        logger = logging.getLogger("uvicorn.error")
+        logger.error(f"Download 404: Requested ID '{id}' not found. Existing IDs in store: {existing_ids}")
         raise HTTPException(status_code=404, detail="File not found or has expired")
         
-    # Function to delete output file after response completes
-    def remove_file(path: str):
-        try:
-            if os.path.exists(path):
-                os.remove(path)
-                print(f"Cleaned up output file after download: {path}")
-        except Exception as e:
-            print(f"Error removing file {path}: {e}")
-            
-    background_tasks.add_task(remove_file, target_file)
-    
     return FileResponse(
         target_file,
         media_type="application/pdf",
