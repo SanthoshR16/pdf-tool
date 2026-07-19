@@ -292,7 +292,7 @@ export default function Home({ setIsProcessing }) {
       // Handle success state without auto-downloading
       setSuccess({
         downloadUrl: `${API_BASE}${statusData.download_url}`,
-        filename: activeTab === 'combine' ? 'combined.pdf' : 'compressed.pdf'
+        filename: activeTab === 'combine' ? 'combined.pdf' : `compressed-${compressionLevel}.pdf`
       });
 
     } catch (err) {
@@ -300,6 +300,36 @@ export default function Home({ setIsProcessing }) {
       setProgress(0);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDownload = async (fileUrl, suggestedName) => {
+    if ('showSaveFilePicker' in window) {
+      try {
+        const response = await fetch(fileUrl);
+        const blob = await response.blob();
+        const handle = await window.showSaveFilePicker({
+          suggestedName: suggestedName,
+          types: [{ description: 'PDF file', accept: { 'application/pdf': ['.pdf'] } }],
+        });
+        const writable = await handle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          // fall back to normal download if picker fails for any reason other than user cancel
+          const a = document.createElement('a');
+          a.href = fileUrl;
+          a.download = suggestedName;
+          a.click();
+        }
+      }
+    } else {
+      // Firefox/Safari fallback — normal anchor download
+      const a = document.createElement('a');
+      a.href = fileUrl;
+      a.download = suggestedName;
+      a.click();
     }
   };
 
@@ -566,22 +596,24 @@ export default function Home({ setIsProcessing }) {
                     </p>
                     
                     <div className="space-y-2">
-                      <a
-                        href={success.downloadUrl}
-                        download
-                        onClick={() => {
+                      <button
+                        type="button"
+                        onClick={async () => {
                           setHasDownloaded(true);
                           setShowToast(true);
+                          await handleDownload(success.downloadUrl, success.filename);
                         }}
                         className="w-full bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white rounded-xl py-3 px-6 text-sm font-bold shadow-md hover:from-purple-700 hover:to-blue-700 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 animate-pop-in animate-pulse-subtle cursor-pointer"
                       >
                         <Download className="h-4 w-4 animate-bounce" />
                         <span>Download File</span>
-                      </a>
+                      </button>
                       
-                      <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-normal text-left px-2.5 mt-1 bg-slate-50 dark:bg-slate-900/40 p-2 rounded-lg border border-slate-100 dark:border-slate-800/60">
-                        To choose where to save, enable 'Ask where to save each file' in your browser's download settings.
-                      </p>
+                      {!('showSaveFilePicker' in window) && (
+                        <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-normal text-left px-2.5 mt-1 bg-slate-50 dark:bg-slate-900/40 p-2 rounded-lg border border-slate-100 dark:border-slate-800/60">
+                          Your browser will save this to your default Downloads folder.
+                        </p>
+                      )}
                     </div>
                     
                     <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80">
