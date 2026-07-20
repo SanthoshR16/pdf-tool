@@ -3,37 +3,37 @@ import AdSlot from './AdSlot';
 
 export default function Footer({ currentPage, setCurrentPage }) {
   const links = [
-    { id: 'terms', label: 'Terms' },
-    { id: 'privacy', label: 'Privacy' },
-    { id: 'contact', label: 'Contact' },
+    { id: 'terms', label: 'Terms of Service' },
+    { id: 'privacy', label: 'Privacy Policy' },
+    { id: 'contact', label: 'Contact Support' },
   ];
 
   return (
-    <footer className="w-full border-t border-neutral-200/80 dark:border-neutral-800/80 bg-white dark:bg-neutral-950 mt-auto">
-      <div className="mx-auto max-w-3xl px-6 py-8">
+    <footer className="w-full border-t border-slate-200/80 dark:border-slate-900 bg-white dark:bg-slate-950 mt-auto">
+      <div className="mx-auto max-w-4xl px-4 py-8">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => setCurrentPage('home')}
-              className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 cursor-pointer"
+              className="text-sm font-extrabold tracking-tight text-slate-800 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer"
             >
               PDF Tool
             </button>
-            <span className="hidden sm:inline text-neutral-300 dark:text-neutral-700">·</span>
-            <span className="text-xs text-neutral-400 dark:text-neutral-500">
-              Free & secure PDF processing
+            <span className="hidden sm:inline text-slate-300 dark:text-slate-800">·</span>
+            <span className="text-xs font-medium text-slate-400 dark:text-slate-500">
+              Secure, server-side document processing
             </span>
           </div>
 
-          <nav className="flex items-center gap-4">
+          <nav className="flex items-center gap-6">
             {links.map(link => (
               <button
                 key={link.id}
                 onClick={() => setCurrentPage(link.id)}
-                className={`text-xs font-medium transition-colors duration-150 cursor-pointer ${
+                className={`text-xs font-semibold tracking-wide transition-all duration-150 cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 ${
                   currentPage === link.id
-                    ? 'text-neutral-900 dark:text-neutral-100'
-                    : 'text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300'
+                    ? 'text-indigo-600 dark:text-indigo-400'
+                    : 'text-slate-400 dark:text-slate-500'
                 }`}
               >
                 {link.label}
@@ -42,11 +42,11 @@ export default function Footer({ currentPage, setCurrentPage }) {
           </nav>
         </div>
 
-        <div className="mt-6 pt-4 border-t border-neutral-100 dark:border-neutral-800/60 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-neutral-400 dark:text-neutral-500">
-            &copy; {new Date().getFullYear()} PDF Tool
+        <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-900/60 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500">
+            &copy; {new Date().getFullYear()} PDF Tool. All files are permanently deleted after processing.
           </p>
-          <div className="overflow-hidden">
+          <div className="overflow-hidden opacity-80 hover:opacity-100 transition-opacity duration-200">
             <AdSlot slot="1234567890" />
           </div>
         </div>
