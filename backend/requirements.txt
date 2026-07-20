@@ -2,3 +2,4 @@ fastapi>=0.100.0
 uvicorn>=0.22.0
 pypdf>=3.9.0
 python-multipart>=0.0.6
+uvloop>=0.18.0; sys_platform != "win32"

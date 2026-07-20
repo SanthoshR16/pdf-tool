@@ -47,7 +47,8 @@ def main():
         # 4. Test compress
         print("Testing PDF compression...")
         try:
-            compress_pdf(merged_file, compressed_file, level="high")
+            import asyncio
+            asyncio.run(compress_pdf(merged_file, compressed_file, level="high"))
             assert os.path.exists(compressed_file), "Compressed file not created"
             print("PDF compression executed successfully.")
         except RuntimeError as e:
@@ -55,6 +56,7 @@ def main():
             print("Note: This is expected if running on a machine without Ghostscript installed in the system PATH.")
             
         print("\nAll tests completed successfully!")
+
         
     finally:
         # Cleanup test files

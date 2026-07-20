@@ -1,15 +1,23 @@
 import os
 import uuid
-import threading
+import asyncio
 import time
 import json
+import logging
 from typing import List
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse
 from services.pdf_service import merge_pdfs, compress_pdf, check_pdf_header
 
+# Configure logging
+logger = logging.getLogger("uvicorn.error")
+
 app = FastAPI(title="PDF Tool API")
+
+# Add Gzip Response Compression
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 # Configure CORS
 allowed_origin = os.getenv("ALLOWED_ORIGIN", "*")
@@ -49,7 +57,7 @@ def get_job_status(job_id: str) -> dict:
             pass
     return None
 
-gs_lock = threading.Lock()
+gs_lock = asyncio.Lock()
 
 def update_job_status(job_id: str, status: str, progress: int = 0, download_url: str = None, error_message: str = None):
     path = os.path.join(TEMP_DIR, f"job_{job_id}.json")
@@ -64,40 +72,39 @@ def update_job_status(job_id: str, status: str, progress: int = 0, download_url:
         with open(path, "w") as f:
             json.dump(data, f)
     except Exception as e:
-        print(f"Failed to update job status {job_id}: {e}")
+        logger.error(f"Failed to update job status {job_id}: {e}")
+
+# Helper sync merge function
+def merge_pdfs_sync(temp_paths: List[str], output_path: str):
+    from pypdf import PdfWriter
+    writer = PdfWriter()
+    try:
+        for path in temp_paths:
+            writer.append(path)
+        writer.write(output_path)
+    finally:
+        writer.close()
 
 # Background worker functions
 def run_combine_job(job_id: str, temp_paths: List[str], output_path: str, output_id: str):
-    from pypdf import PdfWriter, PdfReader
-    writer = PdfWriter()
     try:
         update_job_status(job_id, "processing", progress=0)
         total_files = len(temp_paths)
-        for idx, path in enumerate(temp_paths):
-            if not os.path.exists(path):
-                raise ValueError(f"File not found: {path}")
-            if not check_pdf_header(path):
-                raise ValueError(f"Invalid PDF file signature: {os.path.basename(path)}")
-            try:
-                PdfReader(path)
-            except Exception as e:
-                raise ValueError(f"Corrupted or unsupported PDF structure in '{os.path.basename(path)}'. Details: {str(e)}")
-            
-            writer.append(path)
-            
-            # Progress based on files processed
-            progress = int(((idx + 1) / total_files) * 100)
-            update_job_status(job_id, "processing", progress=min(progress, 99))
-            
-        writer.write(output_path)
-        writer.close()
+        from pypdf import PdfWriter
+        writer = PdfWriter()
+        try:
+            for idx, path in enumerate(temp_paths):
+                writer.append(path)
+                progress = int(((idx + 1) / total_files) * 100)
+                update_job_status(job_id, "processing", progress=min(progress, 99))
+            writer.write(output_path)
+        finally:
+            writer.close()
         update_job_status(job_id, "done", progress=100, download_url=f"/api/download/{output_id}")
     except Exception as e:
-        import traceback
-        traceback.print_exc()
+        logger.error(f"Error in combine job {job_id}: {e}")
         update_job_status(job_id, "error", error_message=str(e))
     finally:
-        writer.close()
         for path in temp_paths:
             if os.path.exists(path):
                 try:
@@ -105,25 +112,23 @@ def run_combine_job(job_id: str, temp_paths: List[str], output_path: str, output
                 except Exception:
                     pass
 
-def run_compress_job(job_id: str, temp_path: str, output_path: str, output_id: str, level: str):
+async def run_combine_job_async(job_id: str, temp_paths: List[str], output_path: str, output_id: str):
+    start_time = time.time()
+    logger.info(f"[Combine Job {job_id}] Started merging {len(temp_paths)} files")
+    await asyncio.to_thread(run_combine_job, job_id, temp_paths, output_path, output_id)
+    duration = time.time() - start_time
+    logger.info(f"[Combine Job {job_id}] Completed merging in {duration:.4f} seconds")
+
+async def run_compress_job(job_id: str, temp_path: str, output_path: str, output_id: str, level: str):
+    start_time = time.time()
+    logger.info(f"[Compress Job {job_id}] Started compression at level {level}")
     try:
         update_job_status(job_id, "processing", progress=0)
-        
-        # Single gs process lock control
-        with gs_lock:
-            def on_progress(p):
-                update_job_status(job_id, "processing", progress=p)
-            
-            compress_pdf(temp_path, output_path, level=level, progress_callback=on_progress)
-            
+        async with gs_lock:
+            await compress_pdf(temp_path, output_path, level=level)
         update_job_status(job_id, "done", progress=100, download_url=f"/api/download/{output_id}")
-    except TimeoutError as e:
-        import traceback
-        traceback.print_exc()
-        update_job_status(job_id, "error", error_message=str(e))
     except Exception as e:
-        import traceback
-        traceback.print_exc()
+        logger.error(f"Error in compress job {job_id}: {e}")
         update_job_status(job_id, "error", error_message=str(e))
     finally:
         if os.path.exists(temp_path):
@@ -131,9 +136,12 @@ def run_compress_job(job_id: str, temp_path: str, output_path: str, output_id: s
                 os.remove(temp_path)
             except Exception:
                 pass
+        duration = time.time() - start_time
+        logger.info(f"[Compress Job {job_id}] Completed compression in {duration:.4f} seconds")
 
 # Run file cleanup in a background thread to remove files older than 1 hour
 def file_cleanup_worker():
+    import time
     while True:
         try:
             now = time.time()
@@ -148,15 +156,16 @@ def file_cleanup_worker():
                         if mtime < cutoff:
                             try:
                                 os.remove(path)
-                                print(f"Deleted expired file: {path}")
+                                logger.info(f"Deleted expired file: {path}")
                             except Exception as e:
-                                print(f"Failed to delete expired file {path}: {e}")
+                                logger.error(f"Failed to delete expired file {path}: {e}")
         except Exception as e:
-            print(f"Cleanup loop error: {e}")
+            logger.error(f"Cleanup loop error: {e}")
         time.sleep(600)  # Check every 10 minutes
 
 @app.on_event("startup")
 def startup_event():
+    import threading
     # Start cleanup thread
     cleanup_thread = threading.Thread(target=file_cleanup_worker, daemon=True)
     cleanup_thread.start()
@@ -168,9 +177,9 @@ def startup_event():
             if "_" in filename:
                 parts = filename.split("_")
                 existing_ids.append(parts[0])
-    print(f"Startup: Existing IDs in store: {existing_ids}")
+    logger.info(f"Startup: Existing IDs in store: {existing_ids}")
 
-# Helper to validate and save uploaded files
+# Helper to validate and save uploaded files (one-pass validation)
 async def save_upload(file: UploadFile) -> str:
     filename = file.filename or "upload.pdf"
     if not filename.lower().endswith(".pdf"):
@@ -210,6 +219,19 @@ async def save_upload(file: UploadFile) -> str:
             os.remove(temp_path)
         raise HTTPException(status_code=400, detail=f"File {filename} is not a valid PDF")
         
+    # Verify PDF structure (PdfReader)
+    try:
+        from pypdf import PdfReader
+        reader = PdfReader(temp_path)
+        _ = len(reader.pages)
+    except Exception as e:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+        raise HTTPException(
+            status_code=400,
+            detail=f"Corrupted or unsupported PDF structure in '{filename}'. Details: {str(e)}"
+        )
+        
     return temp_path
 
 @app.get("/api/health")
@@ -237,16 +259,37 @@ async def combine(background_tasks: BackgroundTasks, files: List[UploadFile] = F
                     pass
         raise
 
-    job_id = str(uuid.uuid4())
     output_id = str(uuid.uuid4())
     output_filename = f"{output_id}_combined.pdf"
     output_path = os.path.join(DOWNLOADS_DIR, output_filename)
     
+    # Fast path for files < 5MB
+    total_size = sum(os.path.getsize(p) for p in temp_paths)
+    if total_size < 5 * 1024 * 1024:
+        start_time = time.time()
+        logger.info(f"[Combine Fast Path] Merging {len(temp_paths)} files ({total_size / 1024 / 1024:.2f}MB)")
+        try:
+            await asyncio.to_thread(merge_pdfs_sync, temp_paths, output_path)
+            duration = time.time() - start_time
+            logger.info(f"[Combine Fast Path] Completed in {duration:.4f} seconds")
+            return {"download_url": f"/api/download/{output_id}"}
+        except Exception as e:
+            logger.error(f"[Combine Fast Path] Failed: {e}")
+            raise HTTPException(status_code=500, detail=f"PDF merging failed: {str(e)}")
+        finally:
+            for path in temp_paths:
+                if os.path.exists(path):
+                    try:
+                        os.remove(path)
+                    except Exception:
+                        pass
+
+    job_id = str(uuid.uuid4())
     # Initialize job status to processing
     update_job_status(job_id, "processing", progress=0)
     
     # Queue processing task
-    background_tasks.add_task(run_combine_job, job_id, temp_paths, output_path, output_id)
+    background_tasks.add_task(run_combine_job_async, job_id, temp_paths, output_path, output_id)
     
     return {"job_id": job_id}
 
@@ -257,11 +300,32 @@ async def compress(background_tasks: BackgroundTasks, file: UploadFile = File(..
         raise HTTPException(status_code=400, detail="Invalid compression level. Must be 'low', 'medium', or 'high'.")
         
     temp_path = await save_upload(file)
-    job_id = str(uuid.uuid4())
     output_id = str(uuid.uuid4())
     output_filename = f"{output_id}_compressed.pdf"
     output_path = os.path.join(DOWNLOADS_DIR, output_filename)
     
+    # Fast path for file < 5MB
+    file_size = os.path.getsize(temp_path)
+    if file_size < 5 * 1024 * 1024:
+        start_time = time.time()
+        logger.info(f"[Compress Fast Path] Compressing {file.filename} ({file_size / 1024 / 1024:.2f}MB) at level {level}")
+        try:
+            async with gs_lock:
+                await compress_pdf(temp_path, output_path, level=level)
+            duration = time.time() - start_time
+            logger.info(f"[Compress Fast Path] Completed in {duration:.4f} seconds")
+            return {"download_url": f"/api/download/{output_id}"}
+        except Exception as e:
+            logger.error(f"[Compress Fast Path] Failed: {e}")
+            raise HTTPException(status_code=500, detail=f"PDF compression failed: {str(e)}")
+        finally:
+            if os.path.exists(temp_path):
+                try:
+                    os.remove(temp_path)
+                except Exception:
+                    pass
+
+    job_id = str(uuid.uuid4())
     # Initialize job status to processing
     update_job_status(job_id, "processing", progress=0)
     
@@ -269,6 +333,7 @@ async def compress(background_tasks: BackgroundTasks, file: UploadFile = File(..
     background_tasks.add_task(run_compress_job, job_id, temp_path, output_path, output_id, level)
     
     return {"job_id": job_id}
+
 
 @app.get("/api/status/{job_id}")
 def get_status(job_id: str):

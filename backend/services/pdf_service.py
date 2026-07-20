@@ -2,6 +2,7 @@ import os
 import subprocess
 import shutil
 import time
+import asyncio
 from typing import List
 from pypdf import PdfWriter, PdfReader
 
@@ -61,21 +62,14 @@ def find_ghostscript_executable() -> str:
     # Default fallback to 'gs' which represents the standard command
     return "gs"
 
-def compress_pdf(input_path: str, output_path: str, level: str = "medium", progress_callback=None) -> None:
-    """Compresses a PDF file using Ghostscript."""
+async def compress_pdf(input_path: str, output_path: str, level: str = "medium", progress_callback=None) -> None:
+    """Compresses a PDF file using Ghostscript asynchronously."""
     if not os.path.exists(input_path):
         raise ValueError(f"Input file not found: {input_path}")
     if not check_pdf_header(input_path):
         raise ValueError("Invalid PDF format. Only valid PDF files can be compressed.")
         
-    try:
-        reader = PdfReader(input_path)
-        total_pages = len(reader.pages)
-    except Exception as e:
-        raise ValueError(f"Corrupted or unsupported PDF structure. Details: {str(e)}")
-
     # Map level to Ghostscript PDFSETTINGS options
-    # Low compression (printer) keeps higher quality; High compression (screen) reduces size significantly.
     settings_map = {
         "low": "/printer",
         "medium": "/ebook",
@@ -85,55 +79,44 @@ def compress_pdf(input_path: str, output_path: str, level: str = "medium", progr
     
     gs_exe = find_ghostscript_executable()
     
+    # NumRenderingThreads=1 for single-core Render free tier, QUIET/SAFER for production speed/security
     cmd = [
         gs_exe,
         "-sDEVICE=pdfwrite",
         "-dCompatibilityLevel=1.4",
         f"-dPDFSETTINGS={gs_setting}",
-        "-dNOPAUSE",
+        "-dNumRenderingThreads=1",
+        "-dQUIET",
         "-dBATCH",
+        "-dNOPAUSE",
+        "-dSAFER",
         f"-sOutputFile={output_path}",
         input_path
     ]
     
     try:
-        process = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            bufsize=1
+        process = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
         )
     except FileNotFoundError:
         raise RuntimeError(
             "Ghostscript executable not found. Make sure Ghostscript is installed and added to the environment PATH."
         )
 
-    start_time = time.time()
-    while True:
-        # Check timeout (4 minutes = 240 seconds)
-        if time.time() - start_time > 240:
+    try:
+        stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=240.0)
+    except asyncio.TimeoutError:
+        try:
             process.kill()
-            raise TimeoutError("File too large for free-tier processing, try a smaller file or Low/Medium setting")
-
-        # Read output line-by-line if process is still running
-        line = process.stdout.readline()
-        if not line and process.poll() is not None:
-            break
-            
-        if line and "Page " in line:
-            try:
-                parts = line.split("Page")
-                if len(parts) > 1:
-                    page_str = parts[-1].strip().split()[0]
-                    page_num = int(page_str)
-                    if progress_callback and total_pages > 0:
-                        progress = int((page_num / total_pages) * 100)
-                        progress_callback(min(progress, 99))
-            except Exception:
-                pass
-                
-    stdout, stderr = process.communicate()
+        except Exception:
+            pass
+        raise TimeoutError("File too large for free-tier processing, try a smaller file or Low/Medium setting")
+        
     if process.returncode != 0:
-        error_msg = stderr or stdout or "Unknown Ghostscript error"
+        error_msg = (stderr.decode(errors='replace').strip() or 
+                     stdout.decode(errors='replace').strip() or 
+                     "Unknown Ghostscript error")
         raise RuntimeError(f"Ghostscript execution failed: {error_msg}")
+
