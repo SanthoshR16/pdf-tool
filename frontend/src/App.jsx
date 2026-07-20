@@ -8,13 +8,11 @@ import AdSlot from './components/AdSlot';
 import { FileText, Sun, Moon } from 'lucide-react';
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState('home'); // 'home' | 'terms' | 'privacy' | 'contact'
+  const [currentPage, setCurrentPage] = useState('home');
   const [isProcessing, setIsProcessing] = useState(false);
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode');
-    if (saved !== null) {
-      return saved === 'true';
-    }
+    if (saved !== null) return saved === 'true';
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
 
@@ -44,81 +42,72 @@ export default function App() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
-      {/* Navigation Header */}
-      <header className="sticky top-0 z-50 w-full border-b border-slate-200/60 dark:border-slate-800/60 bg-white/70 dark:bg-slate-950/70 backdrop-blur-md">
-        <div className="mx-auto max-w-5xl px-4 h-16 flex items-center justify-between">
-          <button 
+    <div className="flex flex-col min-h-screen bg-white dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 transition-colors duration-200">
+      {/* Header */}
+      <header className="sticky top-0 z-50 w-full border-b border-neutral-200/80 dark:border-neutral-800/80 bg-white/80 dark:bg-neutral-950/80 backdrop-blur-xl">
+        <div className="mx-auto max-w-3xl px-6 h-14 flex items-center justify-between">
+          {/* Logo */}
+          <button
             onClick={() => setCurrentPage('home')}
-            className="flex items-center gap-2 group text-left"
+            className="flex items-center gap-2.5 cursor-pointer"
           >
-            <div className="p-2 bg-indigo-600 text-white rounded-xl shadow-md shadow-indigo-100 dark:shadow-none group-hover:bg-indigo-700 transition">
-              <FileText className="h-5 w-5" />
+            <div className="w-8 h-8 bg-neutral-900 dark:bg-white rounded-lg flex items-center justify-center">
+              <FileText className="h-4 w-4 text-white dark:text-neutral-900" />
             </div>
-            <div>
-              <span className="text-lg font-extrabold tracking-tight text-slate-900 dark:text-white block leading-none font-display">
-                PDF Tool
-              </span>
-              <span className="text-[10px] font-bold text-slate-400 block mt-0.5 uppercase tracking-wider">
-                100% Free & Secure
-              </span>
-            </div>
+            <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 tracking-tight">
+              PDF Tool
+            </span>
           </button>
 
-          <nav className="flex items-center gap-1.5">
+          {/* Nav */}
+          <nav className="flex items-center gap-1">
             <button
               onClick={() => setCurrentPage('home')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition duration-150 ${
+              className={`px-3 py-1.5 rounded-lg text-[13px] font-medium transition-colors duration-150 cursor-pointer ${
                 currentPage === 'home'
-                  ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-950 dark:hover:text-slate-100 hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
+                  ? 'text-neutral-900 dark:text-neutral-100 bg-neutral-100 dark:bg-neutral-800'
+                  : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100'
               }`}
             >
               Tools
             </button>
             <button
               onClick={() => setCurrentPage('contact')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition duration-150 ${
+              className={`px-3 py-1.5 rounded-lg text-[13px] font-medium transition-colors duration-150 cursor-pointer ${
                 currentPage === 'contact'
-                  ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-950 dark:hover:text-slate-100 hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
+                  ? 'text-neutral-900 dark:text-neutral-100 bg-neutral-100 dark:bg-neutral-800'
+                  : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100'
               }`}
             >
               Support
             </button>
-            
-            <div className="w-px h-5 bg-slate-200 dark:bg-slate-800 mx-0.5"></div>
 
+            <div className="w-px h-4 bg-neutral-200 dark:bg-neutral-800 mx-1"></div>
+
+            {/* Theme toggle */}
             <button
               onClick={() => setDarkMode(!darkMode)}
-              className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-100 transition duration-300 relative w-9 h-9 flex items-center justify-center overflow-hidden"
+              className="p-2 rounded-lg text-neutral-400 dark:text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors duration-150 cursor-pointer"
               aria-label="Toggle dark mode"
             >
-              {/* Sun Icon */}
-              <span className={`absolute transition-all duration-500 transform ${
-                darkMode ? 'rotate-0 scale-100 opacity-100' : 'rotate-90 scale-0 opacity-0'
-              }`}>
-                <Sun className="h-4.5 w-4.5 text-amber-500" />
-              </span>
-              {/* Moon Icon */}
-              <span className={`absolute transition-all duration-500 transform ${
-                darkMode ? '-rotate-90 scale-0 opacity-0' : 'rotate-0 scale-100 opacity-100'
-              }`}>
-                <Moon className="h-4.5 w-4.5 text-indigo-500" />
-              </span>
+              {darkMode ? (
+                <Sun className="h-4 w-4" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )}
             </button>
           </nav>
         </div>
       </header>
 
-      {/* Top Banner Ad - only when not actively processing */}
+      {/* Top Ad — only when not processing */}
       {!isProcessing && (
-        <div className="mx-auto max-w-5xl w-full px-4 pt-4 animate-fade-in-up">
+        <div className="mx-auto max-w-3xl w-full px-6 pt-4">
           <AdSlot slot="1234567890" />
         </div>
       )}
 
-      {/* Main Content Area */}
+      {/* Main */}
       <main className="flex-grow">
         {renderPage()}
       </main>

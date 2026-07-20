@@ -3,47 +3,52 @@ import AdSlot from './AdSlot';
 
 export default function Footer({ currentPage, setCurrentPage }) {
   const links = [
-    { id: 'terms', label: 'Terms & Conditions' },
-    { id: 'privacy', label: 'Privacy Policy' },
-    { id: 'contact', label: 'Contact Us' },
+    { id: 'terms', label: 'Terms' },
+    { id: 'privacy', label: 'Privacy' },
+    { id: 'contact', label: 'Contact' },
   ];
 
   return (
-    <footer className="w-full border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-8 mt-auto transition-colors duration-200">
-      <div className="mx-auto max-w-5xl px-4 flex flex-col items-center gap-6">
-        <div className="w-full flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <button 
+    <footer className="w-full border-t border-neutral-200/80 dark:border-neutral-800/80 bg-white dark:bg-neutral-950 mt-auto">
+      <div className="mx-auto max-w-3xl px-6 py-8">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <button
               onClick={() => setCurrentPage('home')}
-              className="text-lg font-bold tracking-tight text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 transition"
+              className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 cursor-pointer"
             >
               PDF Tool
             </button>
-            <span className="text-slate-400 dark:text-slate-500 text-sm">| Free PDF Utilities</span>
+            <span className="hidden sm:inline text-neutral-300 dark:text-neutral-700">·</span>
+            <span className="text-xs text-neutral-400 dark:text-neutral-500">
+              Free & secure PDF processing
+            </span>
           </div>
-          
-          <nav className="flex items-center gap-6">
-            {links.map((link) => (
+
+          <nav className="flex items-center gap-4">
+            {links.map(link => (
               <button
                 key={link.id}
                 onClick={() => setCurrentPage(link.id)}
-                className={`text-sm font-medium transition duration-200 hover:text-indigo-600 dark:hover:text-indigo-400 ${
-                  currentPage === link.id ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-400'
+                className={`text-xs font-medium transition-colors duration-150 cursor-pointer ${
+                  currentPage === link.id
+                    ? 'text-neutral-900 dark:text-neutral-100'
+                    : 'text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300'
                 }`}
               >
                 {link.label}
               </button>
             ))}
           </nav>
-          
-          <div className="text-sm text-slate-400 dark:text-slate-500 text-center md:text-right">
-            &copy; {new Date().getFullYear()} PDF Tool. All rights reserved.
-          </div>
         </div>
 
-        {/* Ad slot below the links */}
-        <div className="w-full flex justify-center mt-2 overflow-hidden">
-          <AdSlot slot="1234567890" />
+        <div className="mt-6 pt-4 border-t border-neutral-100 dark:border-neutral-800/60 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-xs text-neutral-400 dark:text-neutral-500">
+            &copy; {new Date().getFullYear()} PDF Tool
+          </p>
+          <div className="overflow-hidden">
+            <AdSlot slot="1234567890" />
+          </div>
         </div>
       </div>
     </footer>

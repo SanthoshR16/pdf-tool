@@ -1,44 +1,69 @@
 @import "tailwindcss";
 
-/* Google Fonts Import */
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&display=swap');
+/* Typography — Inter only, clean and professional */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-/* Custom dark mode variant selector for Tailwind v4 */
+/* Dark mode variant for Tailwind v4 */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ─── Base ─── */
 @layer base {
   body {
-    @apply bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200;
-    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    @apply bg-white dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 antialiased;
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
-  h1, h2, h3, h4, .font-display {
-    font-family: 'Space Grotesk', sans-serif;
+
+  /* Unified heading style — no display font, just weight hierarchy */
+  h1 { @apply text-2xl font-semibold tracking-tight; }
+  h2 { @apply text-lg font-semibold tracking-tight; }
+  h3 { @apply text-base font-medium; }
+
+  /* Focus ring for accessibility */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-indigo-500 dark:outline-indigo-400;
   }
 }
 
-/* Custom scrollbars and styling tweaks */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* ─── Scrollbars ─── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 999px; }
+.dark ::-webkit-scrollbar-thumb { background: #3f3f46; }
+::-webkit-scrollbar-thumb:hover { background: #a1a1aa; }
+.dark ::-webkit-scrollbar-thumb:hover { background: #52525b; }
+
+/* ─── Animations ─── */
+
+/* Fade in up — page entry */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
-}
-.dark ::-webkit-scrollbar-thumb {
-  background: #334155;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+.animate-fade-in-up {
+  animation: fade-in-up 0.35s ease-out forwards;
 }
 
-/* Animations & Keyframes */
+/* Fade in left — list items */
+@keyframes fade-in-left {
+  from { opacity: 0; transform: translateX(-6px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.animate-fade-in-left {
+  animation: fade-in-left 0.2s ease-out forwards;
+}
+
+/* Pop in — success elements */
+@keyframes pop-in {
+  0% { transform: scale(0.96); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.animate-pop-in {
+  animation: pop-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Shimmer — progress bar fill */
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
@@ -49,42 +74,20 @@
   animation: shimmer 1.5s infinite linear;
 }
 
+/* Gentle breathe — idle upload icon */
 @keyframes breathe {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-8px) scale(1.02); }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
 }
 .animate-breathe {
-  animation: breathe 4s ease-in-out infinite;
+  animation: breathe 3s ease-in-out infinite;
 }
 
-@keyframes pop-in {
-  0% { transform: scale(0.95); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
+/* Pulse ring — download CTA */
+@keyframes pulse-ring {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.3); }
+  50% { box-shadow: 0 0 0 6px rgba(99, 102, 241, 0); }
 }
-.animate-pop-in {
-  animation: pop-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
-
-@keyframes pulse-subtle {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
-  50% { box-shadow: 0 0 0 8px rgba(99, 102, 241, 0); }
-}
-.animate-pulse-subtle {
-  animation: pulse-subtle 2s infinite ease-in-out;
-}
-
-@keyframes fade-in-up {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.animate-fade-in-up {
-  animation: fade-in-up 0.4s ease-out forwards;
-}
-
-@keyframes fade-in-left {
-  from { opacity: 0; transform: translateX(-12px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-.animate-fade-in-left {
-  animation: fade-in-left 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.animate-pulse-ring {
+  animation: pulse-ring 2s ease-in-out infinite;
 }
