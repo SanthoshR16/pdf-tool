@@ -62,29 +62,64 @@ def find_ghostscript_executable() -> str:
     # Default fallback to 'gs' which represents the standard command
     return "gs"
 
-async def compress_pdf(input_path: str, output_path: str, level: str = "medium", progress_callback=None) -> None:
-    """Compresses a PDF file using Ghostscript asynchronously."""
+def compress_pdf_pypdf(input_path: str, output_path: str) -> None:
+    """Fallback compression using pypdf content stream compression."""
+    reader = PdfReader(input_path)
+    writer = PdfWriter()
+    for page in reader.pages:
+        page.compress_content_streams()
+        writer.add_page(page)
+    with open(output_path, "wb") as f:
+        writer.write(f)
+    writer.close()
+
+async def compress_pdf(input_path: str, output_path: str, level: str = "medium", progress_callback=None) -> dict:
+    """Compresses a PDF file using Ghostscript with pypdf fallback, returning compression stats."""
     if not os.path.exists(input_path):
         raise ValueError(f"Input file not found: {input_path}")
     if not check_pdf_header(input_path):
         raise ValueError("Invalid PDF format. Only valid PDF files can be compressed.")
         
-    # Map level to Ghostscript PDFSETTINGS options
-    settings_map = {
-        "low": "/printer",
-        "medium": "/ebook",
-        "high": "/screen"
-    }
-    gs_setting = settings_map.get(level.lower(), "/ebook")
+    original_size = os.path.getsize(input_path)
+
+    # Ghostscript resolution & quality parameters tuned for each mode:
+    # "high" = Extreme compression (smallest file size, ~72 DPI downsampling)
+    # "medium" = Recommended compression (balanced, ~150 DPI downsampling)
+    # "low" = Less compression (highest quality, ~220 DPI downsampling)
+    level_lower = level.lower()
+    if level_lower == "high":
+        gs_setting = "/screen"
+        dpi = "72"
+        qfactor = "0.45"
+    elif level_lower == "low":
+        gs_setting = "/printer"
+        dpi = "220"
+        qfactor = "0.90"
+    else:  # medium / recommended
+        gs_setting = "/ebook"
+        dpi = "150"
+        qfactor = "0.75"
     
     gs_exe = find_ghostscript_executable()
     
-    # NumRenderingThreads=1 for single-core Render free tier, QUIET/SAFER for production speed/security
     cmd = [
         gs_exe,
         "-sDEVICE=pdfwrite",
         "-dCompatibilityLevel=1.4",
         f"-dPDFSETTINGS={gs_setting}",
+        "-dDownsampleColorImages=true",
+        "-dColorImageDownsampleType=/Bicubic",
+        f"-dColorImageResolution={dpi}",
+        "-dDownsampleGrayImages=true",
+        "-dGrayImageDownsampleType=/Bicubic",
+        f"-dGrayImageResolution={dpi}",
+        "-dDownsampleMonoImages=true",
+        "-dMonoImageDownsampleType=/Bicubic",
+        f"-dMonoImageResolution={dpi}",
+        f"-dJPEGQFactor={qfactor}",
+        "-dAutoRotatePages=/None",
+        "-dCompressPages=true",
+        "-dUseFlateCompression=true",
         "-dNumRenderingThreads=1",
         "-dQUIET",
         "-dBATCH",
@@ -94,29 +129,56 @@ async def compress_pdf(input_path: str, output_path: str, level: str = "medium",
         input_path
     ]
     
+    gs_failed = False
     try:
         process = await asyncio.create_subprocess_exec(
             *cmd,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE
         )
-    except FileNotFoundError:
-        raise RuntimeError(
-            "Ghostscript executable not found. Make sure Ghostscript is installed and added to the environment PATH."
-        )
-
-    try:
         stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=240.0)
-    except asyncio.TimeoutError:
+        if process.returncode != 0:
+            gs_failed = True
+    except (FileNotFoundError, asyncio.TimeoutError, Exception):
+        gs_failed = True
+
+    # If Ghostscript failed or generated a file >= original size, try pypdf stream compression fallback
+    gs_size = os.path.getsize(output_path) if (not gs_failed and os.path.exists(output_path)) else float('inf')
+    
+    if gs_failed or gs_size >= original_size:
+        temp_pypdf_path = output_path + ".pypdf.tmp"
         try:
-            process.kill()
+            compress_pdf_pypdf(input_path, temp_pypdf_path)
+            pypdf_size = os.path.getsize(temp_pypdf_path)
+            if pypdf_size < original_size and pypdf_size < gs_size:
+                shutil.move(temp_pypdf_path, output_path)
+            elif gs_size < original_size:
+                # Ghostscript produced a smaller file than pypdf, keep Ghostscript output
+                pass
+            else:
+                # If neither produced a smaller file, copy original so size NEVER increases
+                shutil.copyfile(input_path, output_path)
         except Exception:
-            pass
-        raise TimeoutError("File too large for free-tier processing, try a smaller file or Low/Medium setting")
-        
-    if process.returncode != 0:
-        error_msg = (stderr.decode(errors='replace').strip() or 
-                     stdout.decode(errors='replace').strip() or 
-                     "Unknown Ghostscript error")
-        raise RuntimeError(f"Ghostscript execution failed: {error_msg}")
+            if gs_size < original_size:
+                pass
+            else:
+                shutil.copyfile(input_path, output_path)
+        finally:
+            if os.path.exists(temp_pypdf_path):
+                try:
+                    os.remove(temp_pypdf_path)
+                except Exception:
+                    pass
+
+    compressed_size = os.path.getsize(output_path)
+    saved_bytes = max(0, original_size - compressed_size)
+    savings_percent = round((saved_bytes / original_size) * 100, 1) if original_size > 0 else 0.0
+
+    return {
+        "original_size": original_size,
+        "compressed_size": compressed_size,
+        "saved_bytes": saved_bytes,
+        "savings_percent": savings_percent
+    }
+
 

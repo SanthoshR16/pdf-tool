@@ -59,7 +59,7 @@ def get_job_status(job_id: str) -> dict:
 
 gs_lock = asyncio.Lock()
 
-def update_job_status(job_id: str, status: str, progress: int = 0, download_url: str = None, error_message: str = None):
+def update_job_status(job_id: str, status: str, progress: int = 0, download_url: str = None, error_message: str = None, **kwargs):
     path = os.path.join(TEMP_DIR, f"job_{job_id}.json")
     data = {
         "status": status,
@@ -68,6 +68,7 @@ def update_job_status(job_id: str, status: str, progress: int = 0, download_url:
         "error_message": error_message,
         "updated_at": time.time()
     }
+    data.update(kwargs)
     try:
         with open(path, "w") as f:
             json.dump(data, f)
@@ -125,8 +126,8 @@ async def run_compress_job(job_id: str, temp_path: str, output_path: str, output
     try:
         update_job_status(job_id, "processing", progress=0)
         async with gs_lock:
-            await compress_pdf(temp_path, output_path, level=level)
-        update_job_status(job_id, "done", progress=100, download_url=f"/api/download/{output_id}")
+            stats = await compress_pdf(temp_path, output_path, level=level)
+        update_job_status(job_id, "done", progress=100, download_url=f"/api/download/{output_id}", **(stats or {}))
     except Exception as e:
         logger.error(f"Error in compress job {job_id}: {e}")
         update_job_status(job_id, "error", error_message=str(e))
@@ -311,10 +312,13 @@ async def compress(background_tasks: BackgroundTasks, file: UploadFile = File(..
         logger.info(f"[Compress Fast Path] Compressing {file.filename} ({file_size / 1024 / 1024:.2f}MB) at level {level}")
         try:
             async with gs_lock:
-                await compress_pdf(temp_path, output_path, level=level)
+                stats = await compress_pdf(temp_path, output_path, level=level)
             duration = time.time() - start_time
             logger.info(f"[Compress Fast Path] Completed in {duration:.4f} seconds")
-            return {"download_url": f"/api/download/{output_id}"}
+            res = {"download_url": f"/api/download/{output_id}"}
+            if stats:
+                res.update(stats)
+            return res
         except Exception as e:
             logger.error(f"[Compress Fast Path] Failed: {e}")
             raise HTTPException(status_code=500, detail=f"PDF compression failed: {str(e)}")
@@ -347,6 +351,9 @@ def get_status(job_id: str):
     }
     if status_data["status"] == "done":
         response_data["download_url"] = status_data.get("download_url")
+        for k in ["original_size", "compressed_size", "saved_bytes", "savings_percent"]:
+            if k in status_data:
+                response_data[k] = status_data[k]
     elif status_data["status"] == "error":
         response_data["error_message"] = status_data.get("error_message") or "Unknown processing error"
         

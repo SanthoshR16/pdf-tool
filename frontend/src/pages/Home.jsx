@@ -13,7 +13,13 @@ import {
   Sparkles,
   RefreshCw,
   Layers,
-  Minimize2
+  Minimize2,
+  Zap,
+  Copy,
+  Check,
+  BarChart3,
+  ShieldCheck,
+  FileCheck
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -58,7 +64,7 @@ export default function Home({ setIsProcessing }) {
   const [success, setSuccess] = useState(null);
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [previews, setPreviews] = useState({});
-  const [hasDownloaded, setHasDownloaded] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
   const [showToast, setShowToast] = useState(false);
 
   const fileInputRef = useRef(null);
@@ -67,7 +73,6 @@ export default function Home({ setIsProcessing }) {
     setFiles([]);
     setError(null);
     setSuccess(null);
-    setHasDownloaded(false);
   }, [activeTab]);
 
   useEffect(() => {
@@ -81,30 +86,34 @@ export default function Home({ setIsProcessing }) {
     }
   }, [showToast]);
 
-  // Thumbnail generation
+  // Thumbnail & page count generation using pdf.js
   useEffect(() => {
     if (files.length === 0) return;
     loadPdfJs().then(pdfjsLib => {
       files.forEach(file => {
         const key = `${file.name}-${file.size}-${file.lastModified}`;
         if (previews[key]) return;
-        setPreviews(prev => ({ ...prev, [key]: 'loading' }));
+        setPreviews(prev => ({ ...prev, [key]: { status: 'loading' } }));
         const reader = new FileReader();
         reader.onload = async () => {
           try {
             const typedarray = new Uint8Array(reader.result);
             pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
             const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
+            const numPages = pdf.numPages;
             const page = await pdf.getPage(1);
-            const viewport = page.getViewport({ scale: 0.35 });
+            const viewport = page.getViewport({ scale: 0.4 });
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
             canvas.height = viewport.height;
             canvas.width = viewport.width;
             await page.render({ canvasContext: context, viewport }).promise;
-            setPreviews(prev => ({ ...prev, [key]: canvas.toDataURL() }));
+            setPreviews(prev => ({
+              ...prev,
+              [key]: { status: 'ready', url: canvas.toDataURL(), numPages }
+            }));
           } catch {
-            setPreviews(prev => ({ ...prev, [key]: 'error' }));
+            setPreviews(prev => ({ ...prev, [key]: { status: 'error', numPages: '?' } }));
           }
         };
         reader.readAsArrayBuffer(file);
@@ -113,7 +122,7 @@ export default function Home({ setIsProcessing }) {
   }, [files, previews]);
 
   const formatBytes = (bytes) => {
-    if (bytes === 0) return '0 B';
+    if (!bytes || bytes === 0) return '0 B';
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
@@ -128,11 +137,11 @@ export default function Home({ setIsProcessing }) {
     loadPdfJs().catch(() => {});
     for (let f of selectedFiles) {
       if (!f.name.toLowerCase().endsWith('.pdf') && f.type !== 'application/pdf') {
-        errors.push(`"${f.name}" is not a PDF file.`);
+        errors.push(`"${f.name}" is not a PDF document.`);
         continue;
       }
       if (f.size > MAX_SIZE) {
-        errors.push(`"${f.name}" exceeds the 200 MB limit.`);
+        errors.push(`"${f.name}" exceeds the maximum 200 MB limit.`);
         continue;
       }
       pdfs.push(f);
@@ -141,7 +150,6 @@ export default function Home({ setIsProcessing }) {
     if (pdfs.length > 0) {
       if (success) {
         setSuccess(null);
-        setHasDownloaded(false);
         setFiles(activeTab === 'compress' ? [pdfs[0]] : pdfs.slice(0, 30));
       } else {
         if (activeTab === 'compress') {
@@ -150,7 +158,7 @@ export default function Home({ setIsProcessing }) {
           setFiles(prev => {
             const next = [...prev, ...pdfs];
             if (next.length > 30) {
-              setError('Maximum of 30 files allowed.');
+              setError('Maximum of 30 files allowed at once.');
               return next.slice(0, 30);
             }
             return next;
@@ -181,11 +189,11 @@ export default function Home({ setIsProcessing }) {
   };
   const handleDragEnd = () => setDraggedIndex(null);
 
-  // Process
+  // Process PDF request
   const handleProcess = async () => {
     if (files.length === 0) return;
     if (activeTab === 'combine' && files.length < 2) {
-      setError('Please add at least 2 PDF files to combine.');
+      setError('Please select at least 2 PDF files to combine.');
       return;
     }
     const totalSize = files.reduce((acc, f) => acc + f.size, 0);
@@ -194,7 +202,7 @@ export default function Home({ setIsProcessing }) {
     setLoading(true);
     setError(null);
     setSuccess(null);
-    setProgress(10);
+    setProgress(15);
     const startTime = Date.now();
 
     const formData = new FormData();
@@ -214,43 +222,56 @@ export default function Home({ setIsProcessing }) {
       }
       const resData = await response.json();
 
-      // Fast path
+      // Fast path (<5MB)
       if (resData.download_url) {
         const elapsed = Date.now() - startTime;
-        const remaining = Math.max(0, 1000 - elapsed);
+        const remaining = Math.max(0, 800 - elapsed);
         if (remaining > 0) await new Promise(resolve => setTimeout(resolve, remaining));
         setProgress(100);
         setSuccess({
           downloadUrl: `${API_BASE}${resData.download_url}`,
-          filename: activeTab === 'combine' ? 'combined.pdf' : `compressed-${compressionLevel}.pdf`
+          filename: activeTab === 'combine' ? 'combined.pdf' : `compressed-${compressionLevel}.pdf`,
+          originalSize: resData.original_size || files[0]?.size,
+          compressedSize: resData.compressed_size,
+          savedBytes: resData.saved_bytes,
+          savingsPercent: resData.savings_percent
         });
         return;
       }
 
       const jobId = resData.job_id;
       if (!jobId) throw new Error('No job ID received from server.');
-      setProgress(20);
+      setProgress(30);
 
       let isDone = false;
       let statusData = null;
       while (!isDone) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 800));
         const statusResponse = await fetch(`${API_BASE}/api/status/${jobId}`);
         if (!statusResponse.ok) {
           const errData = await statusResponse.json().catch(() => ({}));
-          throw new Error(errData.detail || `Failed to check status: ${statusResponse.status}`);
+          throw new Error(errData.detail || `Failed to check job status: ${statusResponse.status}`);
         }
         statusData = await statusResponse.json();
-        if (statusData.status === 'done') { isDone = true; setProgress(100); }
-        else if (statusData.status === 'error') throw new Error(statusData.error_message || 'Processing failed.');
-        else setProgress(statusData.progress || 20);
+        if (statusData.status === 'done') {
+          isDone = true;
+          setProgress(100);
+        } else if (statusData.status === 'error') {
+          throw new Error(statusData.error_message || 'PDF processing failed.');
+        } else {
+          setProgress(statusData.progress || 40);
+        }
       }
       setSuccess({
         downloadUrl: `${API_BASE}${statusData.download_url}`,
-        filename: activeTab === 'combine' ? 'combined.pdf' : `compressed-${compressionLevel}.pdf`
+        filename: activeTab === 'combine' ? 'combined.pdf' : `compressed-${compressionLevel}.pdf`,
+        originalSize: statusData.original_size || files[0]?.size,
+        compressedSize: statusData.compressed_size,
+        savedBytes: statusData.saved_bytes,
+        savingsPercent: statusData.savings_percent
       });
     } catch (err) {
-      setError(err.message || 'An unexpected error occurred.');
+      setError(err.message || 'An unexpected processing error occurred.');
       setProgress(0);
     } finally {
       setLoading(false);
@@ -264,7 +285,7 @@ export default function Home({ setIsProcessing }) {
         const blob = await response.blob();
         const handle = await window.showSaveFilePicker({
           suggestedName,
-          types: [{ description: 'PDF file', accept: { 'application/pdf': ['.pdf'] } }],
+          types: [{ description: 'PDF Document', accept: { 'application/pdf': ['.pdf'] } }],
         });
         const writable = await handle.createWritable();
         await writable.write(blob);
@@ -285,66 +306,161 @@ export default function Home({ setIsProcessing }) {
     }
   };
 
-  const startOver = () => { setFiles([]); setSuccess(null); setError(null); setProgress(0); setHasDownloaded(false); };
+  const copyDownloadLink = (url) => {
+    navigator.clipboard.writeText(url);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2500);
+  };
+
+  const startOver = () => {
+    setFiles([]);
+    setSuccess(null);
+    setError(null);
+    setProgress(0);
+  };
+
   const isButtonDisabled = activeTab === 'combine' ? files.length < 2 : files.length < 1;
+  const totalFilesSize = files.reduce((acc, f) => acc + f.size, 0);
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-12 md:py-16">
+    <div className="mx-auto max-w-4xl px-4 py-10 md:py-16">
       {/* Hero Header */}
-      <div className="text-center mb-12 flex flex-col items-center">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold tracking-wide uppercase bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-200/40 dark:border-indigo-800/40 mb-4 animate-fade-in-up">
-          <Sparkles className="h-3 w-3 animate-pulse" />
-          <span>No Limits · Completely Free</span>
+      <div className="text-center mb-10 flex flex-col items-center animate-fade-in-up">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-extrabold tracking-wide uppercase bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-800/50 mb-5 shadow-xs">
+          <Sparkles className="h-3.5 w-3.5 text-indigo-500 animate-pulse" />
+          <span>Ghostscript Powered Engine · 100% Free · No Watermarks</span>
         </div>
-        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-slate-50 mb-3 max-w-2xl leading-[1.15]">
-          Manage and Optimize your <span className="bg-gradient-to-r from-indigo-600 via-violet-600 to-indigo-600 bg-clip-text text-transparent dark:from-indigo-400 dark:to-violet-400">PDFs</span> Instantly
+        <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 dark:text-slate-50 mb-4 max-w-3xl leading-[1.12]">
+          Optimize & Combine <span className="bg-gradient-to-r from-indigo-600 via-violet-600 to-indigo-500 bg-clip-text text-transparent dark:from-indigo-400 dark:via-purple-400 dark:to-violet-400">PDF Files</span> Cleanly
         </h1>
-        <p className="text-base text-slate-500 dark:text-slate-400 max-w-lg leading-relaxed">
-          Secure, lighting-fast server-side PDF processing. Combine files or compress to reduce size without losing quality.
+        <p className="text-base md:text-lg font-normal text-slate-600 dark:text-slate-400 max-w-xl leading-relaxed">
+          High-precision PDF compression with mode options (Extreme, Recommended, High Quality) and instant file merging.
         </p>
       </div>
 
       {/* Main Workspace Card */}
-      <div className="bg-white dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl shadow-xl shadow-slate-100/50 dark:shadow-none p-6 md:p-8 backdrop-blur-xl">
-        {/* Tabs Control */}
+      <div className="glass-panel rounded-3xl shadow-2xl shadow-indigo-500/5 dark:shadow-none p-6 md:p-8 backdrop-blur-2xl transition-all duration-300">
+        {/* Tabs Switcher */}
         <div className="flex justify-center mb-8">
-          <div className="inline-flex bg-slate-100/80 dark:bg-slate-950 p-1.5 rounded-2xl border border-slate-200/40 dark:border-slate-800/80 w-full sm:w-auto">
+          <div className="inline-flex bg-slate-200/60 dark:bg-slate-900/90 p-1.5 rounded-2xl border border-slate-300/40 dark:border-slate-800/80 w-full sm:w-auto shadow-inner">
             <button
               onClick={() => !loading && setActiveTab('combine')}
               disabled={loading}
-              className={`flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-semibold rounded-xl transition-all duration-300 w-full sm:w-auto cursor-pointer ${
+              className={`flex items-center justify-center gap-2.5 px-6 py-3 text-sm font-bold rounded-xl transition-all duration-300 w-full sm:w-auto cursor-pointer ${
                 activeTab === 'combine'
-                  ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-200/10'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                  ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-md border border-slate-200/20'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
-              <Layers className="h-4 w-4" />
+              <Layers className="h-4.5 w-4.5" />
               <span>Combine PDFs</span>
             </button>
             <button
               onClick={() => !loading && setActiveTab('compress')}
               disabled={loading}
-              className={`flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-semibold rounded-xl transition-all duration-300 w-full sm:w-auto cursor-pointer ${
+              className={`flex items-center justify-center gap-2.5 px-6 py-3 text-sm font-bold rounded-xl transition-all duration-300 w-full sm:w-auto cursor-pointer ${
                 activeTab === 'compress'
-                  ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-200/10'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                  ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-md border border-slate-200/20'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
-              <Minimize2 className="h-4 w-4" />
+              <Zap className="h-4.5 w-4.5" />
               <span>Compress PDF</span>
             </button>
           </div>
         </div>
 
-        {/* Error Notification */}
+        {/* Error Alert */}
         {error && (
-          <div className="mb-6 p-4 bg-rose-50 dark:bg-rose-950/20 border border-rose-200/60 dark:border-rose-900/40 text-rose-700 dark:text-rose-400 rounded-2xl flex items-start gap-3 animate-fade-in-up">
+          <div className="mb-6 p-4 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-300 rounded-2xl flex items-start gap-3 animate-fade-in-up">
             <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
             <p className="text-sm font-medium leading-relaxed">{error}</p>
           </div>
         )}
 
         <div className="space-y-8">
+          {/* Compression Level Modes (Shown in Compress Mode before/after file selection) */}
+          {activeTab === 'compress' && !success && !loading && (
+            <div className="animate-fade-in-up">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Settings className="h-4 w-4 text-indigo-500" />
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">Select Compression Mode</span>
+                </div>
+                <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">Tuned DPI & JPEG encoding</span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                {[
+                  {
+                    id: 'high',
+                    name: 'Extreme Compression',
+                    badge: 'Smallest File Size',
+                    dpi: '~72 DPI',
+                    est: 'Up to -70%',
+                    desc: 'Maximum compression ratio. Best for email attachments and strict web uploads.'
+                  },
+                  {
+                    id: 'medium',
+                    name: 'Recommended',
+                    badge: 'Best Balance',
+                    tag: 'POPULAR',
+                    dpi: '~150 DPI',
+                    est: 'Up to -50%',
+                    desc: 'Optimal size reduction with high visual clarity for text and color graphics.'
+                  },
+                  {
+                    id: 'low',
+                    name: 'Less Compression',
+                    badge: 'High Quality',
+                    dpi: '~220 DPI',
+                    est: 'Up to -25%',
+                    desc: 'Light compression preserving high image resolution for presentation and print.'
+                  }
+                ].map(mode => (
+                  <button
+                    key={mode.id}
+                    type="button"
+                    onClick={() => setCompressionLevel(mode.id)}
+                    className={`p-5 border text-left rounded-2xl flex flex-col justify-between transition-all duration-300 cursor-pointer relative group ${
+                      compressionLevel === mode.id
+                        ? 'border-indigo-500 dark:border-indigo-400 bg-indigo-50/60 dark:bg-indigo-950/30 ring-2 ring-indigo-500/30 shadow-md'
+                        : 'border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-950/40 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
+                    }`}
+                  >
+                    {mode.tag && (
+                      <span className="absolute -top-2.5 right-4 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-xs">
+                        {mode.tag}
+                      </span>
+                    )}
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <span className={`text-base font-bold ${compressionLevel === mode.id ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-900 dark:text-slate-100'}`}>
+                          {mode.name}
+                        </span>
+                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                          {mode.dpi}
+                        </span>
+                      </div>
+                      <span className="inline-block text-[11px] font-bold text-emerald-600 dark:text-emerald-400 mb-2">
+                        {mode.est} Reduction
+                      </span>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                        {mode.desc}
+                      </p>
+                    </div>
+                    <div className="mt-4 pt-3 border-t border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between">
+                      <span className="text-[11px] font-medium text-slate-400">{mode.badge}</span>
+                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${compressionLevel === mode.id ? 'border-indigo-600 bg-indigo-600 dark:border-indigo-400 dark:bg-indigo-400' : 'border-slate-300 dark:border-slate-700'}`}>
+                        {compressionLevel === mode.id && <div className="w-1.5 h-1.5 bg-white dark:bg-slate-950 rounded-full" />}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Upload Zone */}
           {!success && !loading && (
             <div
@@ -352,10 +468,10 @@ export default function Home({ setIsProcessing }) {
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               onClick={handleBrowseFiles}
-              className={`relative border-2 border-dashed rounded-2xl py-14 px-6 text-center cursor-pointer transition-all duration-300 group ${
+              className={`relative border-2 border-dashed rounded-3xl py-14 px-6 text-center cursor-pointer transition-all duration-300 group ${
                 isDragging
-                  ? 'border-indigo-500 dark:border-indigo-400 bg-indigo-50/50 dark:bg-indigo-950/20 shadow-inner'
-                  : 'border-slate-300 dark:border-slate-700 hover:border-indigo-400/80 dark:hover:border-indigo-500/80 bg-slate-50/40 dark:bg-slate-900/40'
+                  ? 'border-indigo-500 dark:border-indigo-400 bg-indigo-50/70 dark:bg-indigo-950/30 scale-[1.01] shadow-inner'
+                  : 'border-slate-300 dark:border-slate-700 hover:border-indigo-400 dark:hover:border-indigo-500 bg-slate-50/50 dark:bg-slate-900/30'
               } ${loading ? 'pointer-events-none opacity-60' : ''}`}
             >
               <input
@@ -366,99 +482,115 @@ export default function Home({ setIsProcessing }) {
                 accept=".pdf"
                 className="hidden"
               />
-              <div className="inline-flex p-4 rounded-2xl bg-white dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800/80 shadow-sm text-slate-400 dark:text-slate-500 mb-4 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 group-hover:scale-110 transition-all duration-300">
-                <Upload className="h-6 w-6" />
+              <div className="inline-flex p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-md text-indigo-600 dark:text-indigo-400 mb-4 group-hover:scale-110 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">
+                <Upload className="h-7 w-7" />
               </div>
-              <p className="text-base font-semibold text-slate-800 dark:text-slate-200">
-                Drag & drop {activeTab === 'combine' ? 'PDF files' : 'a PDF file'} here, or{' '}
+              <p className="text-lg font-bold text-slate-800 dark:text-slate-200">
+                Drag & drop {activeTab === 'combine' ? 'PDF files' : 'a PDF document'} here, or{' '}
                 <span className="text-indigo-600 dark:text-indigo-400 group-hover:underline">browse</span>
               </p>
-              <p className="mt-1.5 text-xs font-medium text-slate-400 dark:text-slate-500">
-                Supports documents up to 200 MB {activeTab === 'combine' ? '· Max 30 files' : ''}
+              <p className="mt-2 text-xs font-medium text-slate-400 dark:text-slate-500">
+                Maximum file size 200 MB {activeTab === 'combine' ? '· Up to 30 files' : ''}
               </p>
             </div>
           )}
 
-          {/* File list section */}
+          {/* Selected File List & Reordering */}
           {files.length > 0 && !success && !loading && (
             <div className="animate-fade-in-up">
               <div className="flex items-center justify-between mb-4">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                  {files.length} file{files.length !== 1 ? 's' : ''} Selected
-                  {activeTab === 'combine' ? ` / 30` : ''}
-                </span>
+                <div className="flex items-center gap-2">
+                  <FileCheck className="h-4 w-4 text-emerald-500" />
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    {files.length} File{files.length !== 1 ? 's' : ''} Selected ({formatBytes(totalFilesSize)})
+                  </span>
+                </div>
                 {activeTab === 'combine' && (
                   <button
                     onClick={handleBrowseFiles}
-                    className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1 cursor-pointer transition-colors border border-indigo-200/60 dark:border-indigo-850 px-2.5 py-1 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-950/20"
+                    className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1.5 cursor-pointer border border-indigo-200 dark:border-indigo-800 px-3 py-1.5 rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors"
                   >
-                    <Plus className="h-3.5 w-3.5" /> Add files
+                    <Plus className="h-3.5 w-3.5" /> Add More Files
                   </button>
                 )}
               </div>
 
-              <div className="border border-slate-200 dark:border-slate-850 rounded-2xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-850 bg-white dark:bg-slate-950 shadow-sm">
-                {files.map((file, idx) => (
-                  <div
-                    key={`${file.name}-${idx}`}
-                    draggable={activeTab === 'combine' && !loading}
-                    onDragStart={(e) => handleDragStart(e, idx)}
-                    onDragOver={(e) => handleItemDragOver(e, idx)}
-                    onDragEnd={handleDragEnd}
-                    className="flex items-center gap-4 px-5 py-4 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors select-none animate-fade-in-left group"
-                  >
-                    {activeTab === 'combine' && (
-                      <div className="cursor-grab active:cursor-grabbing text-slate-300 dark:text-slate-700 hover:text-slate-500 dark:hover:text-slate-500">
-                        <GripVertical className="h-4 w-4" />
+              <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-850 bg-white/80 dark:bg-slate-950/60 shadow-sm">
+                {files.map((file, idx) => {
+                  const key = `${file.name}-${file.size}-${file.lastModified}`;
+                  const previewData = previews[key];
+                  return (
+                    <div
+                      key={key}
+                      draggable={activeTab === 'combine' && !loading}
+                      onDragStart={(e) => handleDragStart(e, idx)}
+                      onDragOver={(e) => handleItemDragOver(e, idx)}
+                      onDragEnd={handleDragEnd}
+                      className="flex items-center gap-4 px-5 py-4 hover:bg-slate-50/80 dark:hover:bg-slate-900/50 transition-colors select-none group"
+                    >
+                      {activeTab === 'combine' && (
+                        <div className="cursor-grab active:cursor-grabbing text-slate-300 dark:text-slate-700 group-hover:text-slate-500">
+                          <GripVertical className="h-5 w-5" />
+                        </div>
+                      )}
+                      <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-100 dark:border-indigo-900/40 flex items-center justify-center shrink-0">
+                        <FileText className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                       </div>
-                    )}
-                    <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200/40 dark:border-slate-800/40 flex items-center justify-center shrink-0">
-                      <FileText className="h-5 w-5 text-indigo-500 dark:text-indigo-400" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">{file.name}</p>
+                        <div className="flex items-center gap-3 text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                          <span>{formatBytes(file.size)}</span>
+                          {previewData && previewData.numPages && (
+                            <>
+                              <span>·</span>
+                              <span className="font-semibold text-slate-600 dark:text-slate-400">{previewData.numPages} Page{previewData.numPages !== 1 ? 's' : ''}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      {!loading && (
+                        <button
+                          onClick={() => removeFile(idx)}
+                          className="p-2 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all cursor-pointer"
+                          title="Remove file"
+                        >
+                          <Trash2 className="h-4.5 w-4.5" />
+                        </button>
+                      )}
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">{file.name}</p>
-                      <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{formatBytes(file.size)}</p>
-                    </div>
-                    {!loading && (
-                      <button
-                        onClick={() => removeFile(idx)}
-                        className="p-2 text-slate-400 dark:text-slate-600 hover:text-rose-500 dark:hover:text-rose-450 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all cursor-pointer opacity-0 group-hover:opacity-100 focus:opacity-100"
-                        title="Remove file"
-                      >
-                        <Trash2 className="h-4.5 w-4.5" />
-                      </button>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
 
-          {/* Previews grid */}
+          {/* Page Layout Preview Visualizer */}
           {files.length > 0 && !success && !loading && (
             <div className="animate-fade-in-up">
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-4">
-                Pages layout visualizer
-              </p>
-              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4">
+              <span className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3 block">
+                Visual Page Grid Preview
+              </span>
+              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3.5">
                 {files.map((file, idx) => {
                   const key = `${file.name}-${file.size}-${file.lastModified}`;
                   const previewState = previews[key];
                   return (
-                    <div key={key} className="aspect-[3/4] rounded-2xl border border-slate-200 dark:border-slate-850 bg-slate-50/50 dark:bg-slate-950/50 overflow-hidden relative group hover:border-indigo-400 dark:hover:border-indigo-500 hover:shadow-md transition-all duration-300">
-                      <span className="absolute top-2 left-2 bg-slate-900/80 dark:bg-slate-100/90 text-white dark:text-slate-950 text-[10px] font-bold px-2 py-0.5 rounded-lg z-10 shadow-sm">
-                        {idx + 1}
+                    <div key={key} className="aspect-[3/4] rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100/60 dark:bg-slate-950/60 overflow-hidden relative group hover:border-indigo-400 dark:hover:border-indigo-500 shadow-xs transition-all duration-300">
+                      <span className="absolute top-2 left-2 bg-slate-900/80 dark:bg-slate-100/90 text-white dark:text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-md z-10 shadow-xs">
+                        #{idx + 1}
                       </span>
                       <div className="w-full h-full flex items-center justify-center p-2">
-                        {previewState === 'loading' || !previewState ? (
-                          <div className="w-full h-full rounded-xl bg-slate-100 dark:bg-slate-900 animate-pulse" />
-                        ) : previewState === 'error' ? (
-                          <div className="flex flex-col items-center gap-1.5 text-slate-300 dark:text-slate-700">
-                            <FileText className="h-7 w-7" />
-                            <span className="text-[10px] font-medium uppercase tracking-wider">No Preview</span>
+                        {!previewState || previewState.status === 'loading' ? (
+                          <div className="w-full h-full rounded-xl bg-slate-200/50 dark:bg-slate-900 animate-pulse flex items-center justify-center">
+                            <RefreshCw className="h-5 w-5 text-slate-400 animate-spin" />
+                          </div>
+                        ) : previewState.status === 'error' ? (
+                          <div className="flex flex-col items-center gap-1 text-slate-400">
+                            <FileText className="h-6 w-6" />
+                            <span className="text-[10px] font-bold">PDF Ready</span>
                           </div>
                         ) : (
-                          <img src={previewState} alt={file.name} className="object-contain max-h-full max-w-full rounded-lg shadow-sm group-hover:scale-[1.02] transition-transform duration-300" />
+                          <img src={previewState.url} alt={file.name} className="object-contain max-h-full max-w-full rounded-lg shadow-sm group-hover:scale-105 transition-transform duration-300" />
                         )}
                       </div>
                     </div>
@@ -468,70 +600,24 @@ export default function Home({ setIsProcessing }) {
             </div>
           )}
 
-          {/* Compression Level Selector */}
-          {activeTab === 'compress' && files.length > 0 && !success && !loading && (
-            <div className="animate-fade-in-up">
-              <div className="flex items-center gap-2 mb-4">
-                <Settings className="h-4 w-4 text-slate-400 dark:text-slate-500" />
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Compression Strength</span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {[
-                  { id: 'low', label: 'Low Compression', desc: 'Maximum print quality, standard file size reduction.' },
-                  { id: 'medium', label: 'Medium Compression', desc: 'Balanced option. Excellent quality for daily usage.' },
-                  { id: 'high', label: 'High Compression', desc: 'Smallest file size. Optimal quality for web/email delivery.' }
-                ].map(level => (
-                  <button
-                    key={level.id}
-                    type="button"
-                    onClick={() => setCompressionLevel(level.id)}
-                    className={`p-5 border text-left rounded-2xl flex flex-col justify-between transition-all duration-300 cursor-pointer ${
-                      compressionLevel === level.id
-                        ? 'border-indigo-500 dark:border-indigo-400 bg-indigo-50/40 dark:bg-indigo-950/20 ring-1 ring-indigo-500'
-                        : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/50 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700'
-                    }`}
-                  >
-                    <div>
-                      <span className={`text-sm font-bold block ${compressionLevel === level.id ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-800 dark:text-slate-200'}`}>{level.label}</span>
-                      <span className="text-xs text-slate-400 dark:text-slate-500 mt-2 block leading-relaxed">{level.desc}</span>
-                    </div>
-                    <div className="mt-4 flex items-center justify-end w-full">
-                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${compressionLevel === level.id ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300 dark:border-slate-700'}`}>
-                        {compressionLevel === level.id && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Warnings info */}
-          {activeTab === 'compress' && files.length > 0 && files[0].size > 50 * 1024 * 1024 && !success && !loading && (
-            <div className="p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 rounded-2xl flex items-center gap-3 text-amber-700 dark:text-amber-400 text-sm font-medium">
-              <AlertCircle className="h-5 w-5 shrink-0" />
-              <span>Large files may take 1–3 minutes to process. Please keep the window open.</span>
-            </div>
-          )}
-
-          {/* Workspace Footer Action Buttons */}
+          {/* Action Bar */}
           {files.length > 0 && !success && !loading && (
-            <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-100 dark:border-slate-800 animate-fade-in-up">
+            <div className="flex flex-col sm:flex-row gap-3.5 pt-4 border-t border-slate-200/60 dark:border-slate-800 animate-fade-in-up">
               <button
                 onClick={handleProcess}
                 disabled={isButtonDisabled}
-                className={`flex-1 rounded-2xl py-3.5 px-6 text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer shadow-md ${
+                className={`flex-1 rounded-2xl py-4 px-6 text-base font-extrabold transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer shadow-lg ${
                   isButtonDisabled
-                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed shadow-none'
-                    : 'bg-indigo-600 hover:bg-indigo-500 dark:bg-indigo-500 dark:hover:bg-indigo-400 text-white hover:-translate-y-0.5 hover:shadow-indigo-500/20'
+                    ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed shadow-none'
+                    : 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white hover:-translate-y-0.5 shadow-indigo-500/25 glow-indigo'
                 }`}
               >
-                <span>{activeTab === 'combine' ? 'Combine Documents' : 'Optimize File Size'}</span>
-                {!isButtonDisabled && <ArrowRight className="h-4 w-4" />}
+                <span>{activeTab === 'combine' ? 'Combine PDF Documents' : 'Compress PDF Now'}</span>
+                {!isButtonDisabled && <ArrowRight className="h-5 w-5" />}
               </button>
               <button
                 onClick={startOver}
-                className="px-6 py-3.5 rounded-2xl text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 bg-slate-100 dark:bg-slate-900 hover:bg-slate-200/80 dark:hover:bg-slate-950 transition-colors cursor-pointer"
+                className="px-6 py-4 rounded-2xl text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 Clear Workspace
               </button>
@@ -540,78 +626,113 @@ export default function Home({ setIsProcessing }) {
 
           {/* Loading Processing State */}
           {loading && (
-            <div className="py-20 flex flex-col items-center justify-center text-center animate-fade-in-up">
+            <div className="py-16 flex flex-col items-center justify-center text-center animate-fade-in-up">
               <div className="w-full max-w-md space-y-6">
                 <div className="relative w-20 h-20 mx-auto">
-                  <div className="absolute inset-0 rounded-full border-[3px] border-slate-100 dark:border-slate-900" />
-                  <div className="absolute inset-0 rounded-full border-[3px] border-t-indigo-600 dark:border-t-indigo-400 animate-spin" />
+                  <div className="absolute inset-0 rounded-full border-4 border-slate-200 dark:border-slate-800" />
+                  <div className="absolute inset-0 rounded-full border-4 border-t-indigo-600 dark:border-t-indigo-400 animate-spin" />
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <RefreshCw className="h-6 w-6 text-indigo-500 animate-pulse" />
+                    <RefreshCw className="h-7 w-7 text-indigo-600 dark:text-indigo-400 animate-pulse" />
                   </div>
                 </div>
 
-                {isFastPath ? (
-                  <div>
-                    <h4 className="text-base font-semibold text-slate-800 dark:text-slate-200">Analyzing layout structures</h4>
-                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Merging PDF nodes in the local environment...</p>
+                <div>
+                  <h4 className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
+                    {activeTab === 'combine' ? 'Combining PDF Documents...' : 'Executing Ghostscript Compression...'}
+                  </h4>
+                  <p className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 mt-1">
+                    {progress < 30 ? 'Analyzing page structure...' : progress < 70 ? 'Downsampling image streams & content streams...' : 'Building output PDF artifact...'}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs font-extrabold text-slate-600 dark:text-slate-400 px-1">
+                    <span>Processing Pipeline</span>
+                    <span>{progress}%</span>
                   </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between text-sm px-1">
-                      <span className="font-semibold text-slate-700 dark:text-slate-350">
-                        Running optimization pipelines...
-                      </span>
-                      <span className="text-indigo-600 dark:text-indigo-400 font-bold tabular-nums">{progress}%</span>
-                    </div>
-                    <div className="w-full bg-slate-100 dark:bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-200/20">
-                      <div
-                        className="animate-shimmer h-full rounded-full transition-all duration-300 ease-out"
-                        style={{ width: `${progress}%` }}
-                      />
-                    </div>
+                  <div className="w-full bg-slate-200 dark:bg-slate-900 rounded-full h-3 overflow-hidden border border-slate-300/30 dark:border-slate-800">
+                    <div
+                      className="animate-shimmer h-full rounded-full transition-all duration-300 ease-out"
+                      style={{ width: `${progress}%` }}
+                    />
                   </div>
-                )}
+                </div>
               </div>
             </div>
           )}
 
-          {/* Success Download Screen */}
+          {/* Success Download Screen with Stats */}
           {success && (
-            <div className="py-16 flex flex-col items-center text-center animate-pop-in">
-              <div className="w-full max-w-sm space-y-6">
-                <div className="inline-flex p-4 rounded-3xl bg-emerald-50 dark:bg-emerald-950/20 text-emerald-500 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30 shadow-sm animate-breathe">
+            <div className="py-10 flex flex-col items-center text-center animate-pop-in">
+              <div className="w-full max-w-md space-y-6">
+                <div className="inline-flex p-4 rounded-3xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500 border border-emerald-200 dark:border-emerald-800 shadow-md glow-emerald animate-breathe">
                   <CheckCircle className="h-10 w-10" />
                 </div>
+                
                 <div>
-                  <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-50">Operation Successful</h3>
-                  <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-                    Your files are ready. The processed PDF has been saved and optimized for your download.
+                  <h3 className="text-2xl font-black text-slate-900 dark:text-slate-50">Operation Complete!</h3>
+                  <p className="mt-1.5 text-sm font-medium text-slate-500 dark:text-slate-400">
+                    Your PDF has been processed and optimized cleanly.
                   </p>
                 </div>
-                <div className="space-y-4 pt-2">
+
+                {/* Compression Metrics Visualizer */}
+                {activeTab === 'compress' && (success.originalSize || success.compressedSize) && (
+                  <div className="bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 text-left space-y-3 shadow-inner">
+                    <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-slate-800 pb-3">
+                      <span className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">Compression Summary</span>
+                      {success.savingsPercent !== undefined && success.savingsPercent > 0 && (
+                        <span className="px-2.5 py-1 rounded-full text-xs font-black bg-emerald-500 text-white shadow-xs">
+                          -{success.savingsPercent}% Saved
+                        </span>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 block">Original Size</span>
+                        <span className="text-sm font-extrabold text-slate-700 dark:text-slate-300 line-through">
+                          {formatBytes(success.originalSize)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 block">Optimized Size</span>
+                        <span className="text-base font-black text-emerald-600 dark:text-emerald-400">
+                          {formatBytes(success.compressedSize || success.originalSize)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Download Actions */}
+                <div className="space-y-3 pt-2">
                   <button
                     type="button"
                     onClick={async () => {
-                      setHasDownloaded(true);
                       setShowToast(true);
                       await handleDownload(success.downloadUrl, success.filename);
                     }}
-                    className="w-full bg-indigo-600 hover:bg-indigo-500 dark:bg-indigo-500 dark:hover:bg-indigo-400 text-white rounded-2xl py-4 px-6 text-sm font-bold shadow-md hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer animate-pulse-ring"
+                    className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-2xl py-4 px-6 text-base font-extrabold shadow-xl hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2.5 cursor-pointer glow-indigo animate-pulse-ring"
                   >
-                    <Download className="h-4.5 w-4.5" />
+                    <Download className="h-5 w-5" />
                     Download Optimized PDF
                   </button>
-                  {!('showSaveFilePicker' in window) && (
-                    <p className="text-[11px] text-slate-400 dark:text-slate-500">
-                      This browser will save the file directly to your system's default Downloads.
-                    </p>
-                  )}
-                  <button
-                    onClick={startOver}
-                    className="text-sm font-bold text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-450 transition-colors cursor-pointer block mx-auto"
-                  >
-                    Process another file
-                  </button>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => copyDownloadLink(success.downloadUrl)}
+                      className="flex-1 py-3 px-4 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      {copiedLink ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
+                      <span>{copiedLink ? 'Link Copied!' : 'Copy Direct Link'}</span>
+                    </button>
+                    <button
+                      onClick={startOver}
+                      className="flex-1 py-3 px-4 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors cursor-pointer"
+                    >
+                      Process Another PDF
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -621,9 +742,9 @@ export default function Home({ setIsProcessing }) {
 
       {/* Floating Toast Notification */}
       {showToast && (
-        <div className="fixed bottom-8 right-8 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 px-5 py-3.5 rounded-2xl shadow-xl flex items-center gap-2 text-sm font-bold animate-fade-in-up z-50 border border-slate-800 dark:border-slate-200">
-          <CheckCircle className="h-4 w-4 text-emerald-400 dark:text-emerald-600" />
-          Download request dispatched
+        <div className="fixed bottom-8 right-8 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-2.5 text-sm font-extrabold animate-fade-in-up z-50 border border-slate-800 dark:border-slate-200">
+          <CheckCircle className="h-4.5 w-4.5 text-emerald-400 dark:text-emerald-600" />
+          Download Starting...
         </div>
       )}
     </div>
