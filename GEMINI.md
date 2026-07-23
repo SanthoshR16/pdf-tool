@@ -7,7 +7,7 @@ Do not modify backend/temp or backend/downloads contents directly.
 
 ## UI/Frontend Rule — ALWAYS APPLY (no exceptions, no asking)
 
-For ANY task involving a website, web app, page, component, dashboard, form, or UI — even if the user doesn't mention HeroUI — default to HeroUI v3.
+For ANY task involving a website, web app, page, component, dashboard, or form — even if the user doesn't mention HeroUI — default to HeroUI v3 and follow the design-review process below. Never skip straight to code.
 
 ### Stack (non-negotiable default)
 - @heroui/react + @heroui/styles (Tailwind CSS v4, React Aria Components)
@@ -18,9 +18,27 @@ For ANY task involving a website, web app, page, component, dashboard, form, or 
 1. Query component docs/source first.
 2. Never invent props — verify against fetched docs.
 
-### Execution rules
-- Apply changes in ONE batched pass across all components/pages. Do not stop for per-component approval.
-- Every screen must look production-grade by default: proper spacing scale, elevation/variant hierarchy, consistent theme tokens from @heroui/styles — not raw unstyled Tailwind divs.
-- Use compound structure even for simple cases (don't flatten Card into a div just because it's quick).
-- If existing project uses plain Tailwind, migrate incrementally to HeroUI v3 rather than mixing systems in the same view.
+### STEP 1 — Design plan (mandatory, before any code)
+Describe, in a few lines, before writing code:
+- Layout hierarchy (what's primary vs secondary on this screen)
+- Spacing scale (4/8px grid)
+- Color/typography choices, referencing HeroUI v3 tokens
+- Reference point if one exists (e.g. "Linear.app dashboard density", "HeroUI Figma Kit layout X")
+Do not proceed to code until this plan is stated inline in the response.
+
+### STEP 2 — Implement
+- One batched pass across all components/pages — no per-component approval stops.
+- Compound structure even for simple cases.
+- If existing project uses plain Tailwind, migrate incrementally — don't mix systems in the same view.
+
+### STEP 3 — Self-review checklist (mandatory, after generating, before presenting)
+- Spacing consistent on 4/8px scale?
+- Clear hierarchy — one primary action per screen?
+- More than 2 font weights used unnecessarily? Cut it.
+- Max 2 accent colors, no shadows except on interactive elements?
+- Would this look like a template, or a real product? If template → fix before presenting.
+Fix any failures silently, then present the final result.
+
+### Goal
+Every UI output should look like a polished, outstanding, production-ready product screen — not a scaffold. No unstyled defaults, no placeholder-looking components, no unreviewed first-draft output.
 
