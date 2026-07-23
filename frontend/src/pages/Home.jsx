@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Card, Button, Chip, Alert, Badge } from '@heroui/react';
 import {
   FileText,
   Upload,
@@ -13,12 +14,9 @@ import {
   Sparkles,
   RefreshCw,
   Layers,
-  Minimize2,
   Zap,
   Copy,
   Check,
-  BarChart3,
-  ShieldCheck,
   FileCheck
 } from 'lucide-react';
 
@@ -326,24 +324,25 @@ export default function Home({ setIsProcessing }) {
     <div className="mx-auto max-w-4xl px-4 py-10 md:py-16">
       {/* Hero Header */}
       <div className="text-center mb-10 flex flex-col items-center animate-fade-in-up">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-extrabold tracking-wide uppercase bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-800/50 mb-5 shadow-xs">
+        <Chip.Root className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-extrabold tracking-wide uppercase bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-800/50 mb-5 shadow-xs">
           <Sparkles className="h-3.5 w-3.5 text-indigo-500 animate-pulse" />
-          <span>Ghostscript Powered Engine · 100% Free · No Watermarks</span>
-        </div>
+          <Chip.Label>Ghostscript Powered Engine · 100% Free · No Watermarks</Chip.Label>
+        </Chip.Root>
         <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 dark:text-slate-50 mb-4 max-w-3xl leading-[1.12]">
           Optimize & Combine <span className="bg-gradient-to-r from-indigo-600 via-violet-600 to-indigo-500 bg-clip-text text-transparent dark:from-indigo-400 dark:via-purple-400 dark:to-violet-400">PDF Files</span> Cleanly
         </h1>
         <p className="text-base md:text-lg font-normal text-slate-600 dark:text-slate-400 max-w-xl leading-relaxed">
-          High-precision PDF compression with mode options (Extreme, Recommended, High Quality) and instant file merging.
+          High-precision PDF compression with HeroUI v3 semantic modes (Extreme, Recommended, High Quality) and instant file merging.
         </p>
       </div>
 
-      {/* Main Workspace Card */}
-      <div className="glass-panel rounded-3xl shadow-2xl shadow-indigo-500/5 dark:shadow-none p-6 md:p-8 backdrop-blur-2xl transition-all duration-300">
-        {/* Tabs Switcher */}
-        <div className="flex justify-center mb-8">
+      {/* Main Workspace Card using HeroUI v3 Compound Component Pattern */}
+      <Card.Root className="glass-panel rounded-3xl shadow-2xl shadow-indigo-500/5 dark:shadow-none p-6 md:p-8 backdrop-blur-2xl transition-all duration-300">
+        {/* Tabs Switcher using HeroUI Button Semantic Variants */}
+        <Card.Header className="flex justify-center mb-8 p-0 border-none bg-transparent">
           <div className="inline-flex bg-slate-200/60 dark:bg-slate-900/90 p-1.5 rounded-2xl border border-slate-300/40 dark:border-slate-800/80 w-full sm:w-auto shadow-inner">
-            <button
+            <Button
+              variant={activeTab === 'combine' ? 'primary' : 'tertiary'}
               onClick={() => !loading && setActiveTab('combine')}
               disabled={loading}
               className={`flex items-center justify-center gap-2.5 px-6 py-3 text-sm font-bold rounded-xl transition-all duration-300 w-full sm:w-auto cursor-pointer ${
@@ -354,8 +353,9 @@ export default function Home({ setIsProcessing }) {
             >
               <Layers className="h-4.5 w-4.5" />
               <span>Combine PDFs</span>
-            </button>
-            <button
+            </Button>
+            <Button
+              variant={activeTab === 'compress' ? 'primary' : 'tertiary'}
               onClick={() => !loading && setActiveTab('compress')}
               disabled={loading}
               className={`flex items-center justify-center gap-2.5 px-6 py-3 text-sm font-bold rounded-xl transition-all duration-300 w-full sm:w-auto cursor-pointer ${
@@ -366,20 +366,25 @@ export default function Home({ setIsProcessing }) {
             >
               <Zap className="h-4.5 w-4.5" />
               <span>Compress PDF</span>
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card.Header>
 
-        {/* Error Alert */}
+        {/* Error Alert using HeroUI Alert Compound Pattern */}
         {error && (
-          <div className="mb-6 p-4 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-300 rounded-2xl flex items-start gap-3 animate-fade-in-up">
-            <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
-            <p className="text-sm font-medium leading-relaxed">{error}</p>
-          </div>
+          <Alert.Root variant="secondary" className="mb-6 p-4 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-300 rounded-2xl flex items-start gap-3 animate-fade-in-up">
+            <Alert.Indicator>
+              <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+            </Alert.Indicator>
+            <Alert.Content>
+              <Alert.Title className="text-sm font-bold">Error Notice</Alert.Title>
+              <Alert.Description className="text-sm font-medium leading-relaxed">{error}</Alert.Description>
+            </Alert.Content>
+          </Alert.Root>
         )}
 
-        <div className="space-y-8">
-          {/* Compression Level Modes (Shown in Compress Mode before/after file selection) */}
+        <Card.Content className="space-y-8 p-0">
+          {/* Compression Level Modes using HeroUI Card Compound Patterns & Semantic Variants */}
           {activeTab === 'compress' && !success && !loading && (
             <div className="animate-fade-in-up">
               <div className="flex items-center justify-between mb-4">
@@ -418,9 +423,8 @@ export default function Home({ setIsProcessing }) {
                     desc: 'Light compression preserving high image resolution for presentation and print.'
                   }
                 ].map(mode => (
-                  <button
+                  <Card.Root
                     key={mode.id}
-                    type="button"
                     onClick={() => setCompressionLevel(mode.id)}
                     className={`p-5 border text-left rounded-2xl flex flex-col justify-between transition-all duration-300 cursor-pointer relative group ${
                       compressionLevel === mode.id
@@ -429,33 +433,35 @@ export default function Home({ setIsProcessing }) {
                     }`}
                   >
                     {mode.tag && (
-                      <span className="absolute -top-2.5 right-4 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-xs">
-                        {mode.tag}
-                      </span>
+                      <Badge.Root className="absolute -top-2.5 right-4">
+                        <Badge.Label className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-xs">
+                          {mode.tag}
+                        </Badge.Label>
+                      </Badge.Root>
                     )}
-                    <div>
+                    <Card.Header className="p-0 mb-2 border-none bg-transparent">
                       <div className="flex items-center justify-between gap-2 mb-1">
-                        <span className={`text-base font-bold ${compressionLevel === mode.id ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-900 dark:text-slate-100'}`}>
+                        <Card.Title className="text-base font-bold text-slate-900 dark:text-slate-100">
                           {mode.name}
-                        </span>
-                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                          {mode.dpi}
-                        </span>
+                        </Card.Title>
+                        <Chip.Root className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                          <Chip.Label>{mode.dpi}</Chip.Label>
+                        </Chip.Root>
                       </div>
-                      <span className="inline-block text-[11px] font-bold text-emerald-600 dark:text-emerald-400 mb-2">
+                      <span className="inline-block text-[11px] font-bold text-emerald-600 dark:text-emerald-400 mb-1">
                         {mode.est} Reduction
                       </span>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                        {mode.desc}
-                      </p>
-                    </div>
-                    <div className="mt-4 pt-3 border-t border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between">
+                    </Card.Header>
+                    <Card.Description className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                      {mode.desc}
+                    </Card.Description>
+                    <Card.Footer className="mt-4 pt-3 border-t border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between p-0 bg-transparent">
                       <span className="text-[11px] font-medium text-slate-400">{mode.badge}</span>
                       <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${compressionLevel === mode.id ? 'border-indigo-600 bg-indigo-600 dark:border-indigo-400 dark:bg-indigo-400' : 'border-slate-300 dark:border-slate-700'}`}>
                         {compressionLevel === mode.id && <div className="w-1.5 h-1.5 bg-white dark:bg-slate-950 rounded-full" />}
                       </div>
-                    </div>
-                  </button>
+                    </Card.Footer>
+                  </Card.Root>
                 ))}
               </div>
             </div>
@@ -506,12 +512,13 @@ export default function Home({ setIsProcessing }) {
                   </span>
                 </div>
                 {activeTab === 'combine' && (
-                  <button
+                  <Button
+                    variant="tertiary"
                     onClick={handleBrowseFiles}
                     className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1.5 cursor-pointer border border-indigo-200 dark:border-indigo-800 px-3 py-1.5 rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors"
                   >
                     <Plus className="h-3.5 w-3.5" /> Add More Files
-                  </button>
+                  </Button>
                 )}
               </div>
 
@@ -549,13 +556,14 @@ export default function Home({ setIsProcessing }) {
                         </div>
                       </div>
                       {!loading && (
-                        <button
+                        <Button
+                          variant="tertiary"
                           onClick={() => removeFile(idx)}
                           className="p-2 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all cursor-pointer"
                           title="Remove file"
                         >
                           <Trash2 className="h-4.5 w-4.5" />
-                        </button>
+                        </Button>
                       )}
                     </div>
                   );
@@ -575,11 +583,11 @@ export default function Home({ setIsProcessing }) {
                   const key = `${file.name}-${file.size}-${file.lastModified}`;
                   const previewState = previews[key];
                   return (
-                    <div key={key} className="aspect-[3/4] rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100/60 dark:bg-slate-950/60 overflow-hidden relative group hover:border-indigo-400 dark:hover:border-indigo-500 shadow-xs transition-all duration-300">
-                      <span className="absolute top-2 left-2 bg-slate-900/80 dark:bg-slate-100/90 text-white dark:text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-md z-10 shadow-xs">
-                        #{idx + 1}
-                      </span>
-                      <div className="w-full h-full flex items-center justify-center p-2">
+                    <Card.Root key={key} className="aspect-[3/4] rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100/60 dark:bg-slate-950/60 overflow-hidden relative group hover:border-indigo-400 dark:hover:border-indigo-500 shadow-xs transition-all duration-300">
+                      <Chip.Root className="absolute top-2 left-2 bg-slate-900/80 dark:bg-slate-100/90 text-white dark:text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-md z-10 shadow-xs">
+                        <Chip.Label>#{idx + 1}</Chip.Label>
+                      </Chip.Root>
+                      <Card.Content className="w-full h-full flex items-center justify-center p-2">
                         {!previewState || previewState.status === 'loading' ? (
                           <div className="w-full h-full rounded-xl bg-slate-200/50 dark:bg-slate-900 animate-pulse flex items-center justify-center">
                             <RefreshCw className="h-5 w-5 text-slate-400 animate-spin" />
@@ -592,18 +600,19 @@ export default function Home({ setIsProcessing }) {
                         ) : (
                           <img src={previewState.url} alt={file.name} className="object-contain max-h-full max-w-full rounded-lg shadow-sm group-hover:scale-105 transition-transform duration-300" />
                         )}
-                      </div>
-                    </div>
+                      </Card.Content>
+                    </Card.Root>
                   );
                 })}
               </div>
             </div>
           )}
 
-          {/* Action Bar */}
+          {/* Action Bar with HeroUI Button Semantic Variants */}
           {files.length > 0 && !success && !loading && (
-            <div className="flex flex-col sm:flex-row gap-3.5 pt-4 border-t border-slate-200/60 dark:border-slate-800 animate-fade-in-up">
-              <button
+            <Card.Footer className="flex flex-col sm:flex-row gap-3.5 pt-4 border-t border-slate-200/60 dark:border-slate-800 animate-fade-in-up p-0 bg-transparent">
+              <Button
+                variant="primary"
                 onClick={handleProcess}
                 disabled={isButtonDisabled}
                 className={`flex-1 rounded-2xl py-4 px-6 text-base font-extrabold transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer shadow-lg ${
@@ -614,14 +623,15 @@ export default function Home({ setIsProcessing }) {
               >
                 <span>{activeTab === 'combine' ? 'Combine PDF Documents' : 'Compress PDF Now'}</span>
                 {!isButtonDisabled && <ArrowRight className="h-5 w-5" />}
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="secondary"
                 onClick={startOver}
                 className="px-6 py-4 rounded-2xl text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 Clear Workspace
-              </button>
-            </div>
+              </Button>
+            </Card.Footer>
           )}
 
           {/* Loading Processing State */}
@@ -661,7 +671,7 @@ export default function Home({ setIsProcessing }) {
             </div>
           )}
 
-          {/* Success Download Screen with Stats */}
+          {/* Success Download Screen with HeroUI Cards & Semantic Buttons */}
           {success && (
             <div className="py-10 flex flex-col items-center text-center animate-pop-in">
               <div className="w-full max-w-md space-y-6">
@@ -676,18 +686,18 @@ export default function Home({ setIsProcessing }) {
                   </p>
                 </div>
 
-                {/* Compression Metrics Visualizer */}
+                {/* Compression Metrics Visualizer using Card.Root */}
                 {activeTab === 'compress' && (success.originalSize || success.compressedSize) && (
-                  <div className="bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 text-left space-y-3 shadow-inner">
-                    <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-slate-800 pb-3">
-                      <span className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">Compression Summary</span>
+                  <Card.Root className="bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 text-left space-y-3 shadow-inner">
+                    <Card.Header className="flex items-center justify-between border-b border-slate-200/60 dark:border-slate-800 pb-3 p-0 bg-transparent">
+                      <Card.Title className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">Compression Summary</Card.Title>
                       {success.savingsPercent !== undefined && success.savingsPercent > 0 && (
-                        <span className="px-2.5 py-1 rounded-full text-xs font-black bg-emerald-500 text-white shadow-xs">
-                          -{success.savingsPercent}% Saved
-                        </span>
+                        <Chip.Root className="px-2.5 py-1 rounded-full text-xs font-black bg-emerald-500 text-white shadow-xs">
+                          <Chip.Label>-{success.savingsPercent}% Saved</Chip.Label>
+                        </Chip.Root>
                       )}
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    </Card.Header>
+                    <Card.Content className="grid grid-cols-2 gap-4 p-0">
                       <div>
                         <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 block">Original Size</span>
                         <span className="text-sm font-extrabold text-slate-700 dark:text-slate-300 line-through">
@@ -700,14 +710,14 @@ export default function Home({ setIsProcessing }) {
                           {formatBytes(success.compressedSize || success.originalSize)}
                         </span>
                       </div>
-                    </div>
-                  </div>
+                    </Card.Content>
+                  </Card.Root>
                 )}
 
-                {/* Download Actions */}
+                {/* Download Actions using HeroUI Button Semantic Variants */}
                 <div className="space-y-3 pt-2">
-                  <button
-                    type="button"
+                  <Button
+                    variant="primary"
                     onClick={async () => {
                       setShowToast(true);
                       await handleDownload(success.downloadUrl, success.filename);
@@ -715,38 +725,41 @@ export default function Home({ setIsProcessing }) {
                     className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-2xl py-4 px-6 text-base font-extrabold shadow-xl hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2.5 cursor-pointer glow-indigo animate-pulse-ring"
                   >
                     <Download className="h-5 w-5" />
-                    Download Optimized PDF
-                  </button>
+                    <span>Download Optimized PDF</span>
+                  </Button>
 
                   <div className="flex items-center gap-2">
-                    <button
+                    <Button
+                      variant="secondary"
                       onClick={() => copyDownloadLink(success.downloadUrl)}
                       className="flex-1 py-3 px-4 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       {copiedLink ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
                       <span>{copiedLink ? 'Link Copied!' : 'Copy Direct Link'}</span>
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="tertiary"
                       onClick={startOver}
                       className="flex-1 py-3 px-4 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors cursor-pointer"
                     >
-                      Process Another PDF
-                    </button>
+                      <span>Process Another PDF</span>
+                    </Button>
                   </div>
                 </div>
               </div>
             </div>
           )}
-        </div>
-      </div>
+        </Card.Content>
+      </Card.Root>
 
       {/* Floating Toast Notification */}
       {showToast && (
         <div className="fixed bottom-8 right-8 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-2.5 text-sm font-extrabold animate-fade-in-up z-50 border border-slate-800 dark:border-slate-200">
           <CheckCircle className="h-4.5 w-4.5 text-emerald-400 dark:text-emerald-600" />
-          Download Starting...
+          <span>Download Starting...</span>
         </div>
       )}
     </div>
   );
 }
+
