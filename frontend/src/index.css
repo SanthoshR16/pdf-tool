@@ -1,8 +1,8 @@
 @import "tailwindcss";
 @import "@heroui/styles";
 
-/* Typography — Plus Jakarta Sans & Inter */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap');
+/* Typography — Playfair Display (Editorial Serif), Plus Jakarta Sans & Inter */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,800;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap');
 
 /* Dark mode variant for Tailwind v4 */
 @custom-variant dark (&:where(.dark, .dark *));
@@ -10,7 +10,7 @@
 /* ─── Base ─── */
 @layer base {
   body {
-    @apply bg-[#051424] text-slate-100 antialiased selection:bg-indigo-500/30 selection:text-indigo-300;
+    @apply bg-[#070d17] text-slate-100 antialiased selection:bg-amber-500/30 selection:text-amber-200;
     font-family: 'Plus Jakarta Sans', 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -19,75 +19,79 @@
 
   /* Focus ring for accessibility */
   :focus-visible {
-    @apply outline-2 outline-offset-2 outline-indigo-400;
+    @apply outline-2 outline-offset-2 outline-amber-400;
   }
+}
+
+.font-editorial {
+  font-family: 'Playfair Display', Georgia, serif;
 }
 
 /* ─── Custom Scrollbars ─── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #334155; border-radius: 999px; }
-::-webkit-scrollbar-thumb:hover { background: #475569; }
+::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: #334155; }
 
-/* ─── Mesh Gradient & Floating Orbs ─── */
-.mesh-gradient {
-  background: radial-gradient(at 0% 0%, rgba(192, 193, 255, 0.08) 0px, transparent 50%),
-              radial-gradient(at 100% 100%, rgba(78, 222, 163, 0.05) 0px, transparent 50%),
-              radial-gradient(at 50% 0%, rgba(99, 102, 241, 0.05) 0px, transparent 50%);
+/* ─── Editorial Mesh Gradient & Floating Orbs ─── */
+.editorial-mesh {
+  background: radial-gradient(at 10% 10%, rgba(245, 158, 11, 0.07) 0px, transparent 50%),
+              radial-gradient(at 90% 90%, rgba(129, 140, 248, 0.08) 0px, transparent 50%),
+              radial-gradient(at 50% 50%, rgba(16, 185, 129, 0.05) 0px, transparent 60%);
 }
 
 .floating-orb {
   position: absolute;
   border-radius: 50%;
-  filter: blur(80px);
+  filter: blur(90px);
   z-index: -1;
-  opacity: 0.15;
-  animation: floatOrb 20s infinite alternate ease-in-out;
+  opacity: 0.18;
+  animation: floatOrb 22s infinite alternate ease-in-out;
 }
 
 @keyframes floatOrb {
   0% { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(60px, 40px) scale(1.15); }
+  100% { transform: translate(70px, 50px) scale(1.18); }
 }
 
 /* ─── Glassmorphism & Custom Effects ─── */
 .glass-panel {
-  background: rgba(28, 43, 60, 0.45);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: 0 20px 50px 0 rgba(0, 0, 0, 0.5);
 }
 
-.glow-indigo {
-  box-shadow: 0 0 35px -5px rgba(99, 102, 241, 0.35);
+.glow-amber {
+  box-shadow: 0 0 35px -5px rgba(245, 158, 11, 0.35);
 }
 
 .glow-emerald {
-  box-shadow: 0 0 35px -5px rgba(78, 222, 163, 0.35);
+  box-shadow: 0 0 35px -5px rgba(16, 185, 129, 0.35);
 }
 
 .download-btn-glow {
-  background: linear-gradient(135deg, #c0c1ff 0%, #8083ff 100%);
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 .download-btn-glow:hover {
-  box-shadow: 0 0 30px 5px rgba(128, 131, 255, 0.4);
+  box-shadow: 0 0 35px 5px rgba(245, 158, 11, 0.45);
   transform: translateY(-2px) scale(1.01);
 }
 
 /* ─── Keyframe Animations ─── */
 @keyframes checkPulse {
-  0% { box-shadow: 0 0 0 0 rgba(78, 222, 163, 0.4); }
-  70% { box-shadow: 0 0 0 30px rgba(78, 222, 163, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(78, 222, 163, 0); }
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+  70% { box-shadow: 0 0 0 32px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
 }
 .animate-check-pulse {
   animation: checkPulse 3s infinite;
 }
 
 @keyframes fade-in-up {
-  from { opacity: 0; transform: translateY(12px); }
+  from { opacity: 0; transform: translateY(14px); }
   to { opacity: 1; transform: translateY(0); }
 }
 .animate-fade-in-up {

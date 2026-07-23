@@ -318,44 +318,44 @@ export default function Home({ setIsProcessing }) {
   const totalFilesSize = files.reduce((acc, f) => acc + f.size, 0);
 
   return (
-    <div className="relative min-h-screen mesh-gradient overflow-hidden">
-      {/* AetherPDF Atmospheric Floating Orbs */}
-      <div className="floating-orb w-[500px] h-[500px] bg-indigo-500/15 top-[-5%] left-[-5%]" />
-      <div className="floating-orb w-[450px] h-[450px] bg-emerald-500/10 bottom-[-5%] right-[-5%]" />
-      <div className="floating-orb w-[350px] h-[350px] bg-purple-500/10 top-[35%] right-[15%]" />
+    <div className="relative min-h-screen editorial-mesh overflow-hidden">
+      {/* Stitch Editorial Premium Floating Atmospheric Orbs */}
+      <div className="floating-orb w-[550px] h-[550px] bg-amber-500/10 top-[-5%] left-[-5%]" />
+      <div className="floating-orb w-[480px] h-[480px] bg-indigo-500/15 bottom-[-5%] right-[-5%]" />
+      <div className="floating-orb w-[360px] h-[360px] bg-emerald-500/10 top-[35%] right-[12%]" />
 
-      {/* Main Content Container */}
+      {/* Main Container */}
       <div className="relative z-10 mx-auto max-w-5xl px-4 pt-12 pb-20 md:pt-16 md:pb-24">
         
-        {/* AetherPDF Hero Section */}
+        {/* Stitch Editorial Premium Hero Header */}
         <header className="text-center mb-10 flex flex-col items-center animate-fade-in-up">
-          <Chip.Root className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-semibold text-slate-300 backdrop-blur-md mb-5 shadow-xs">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <Chip.Root className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/5 border border-amber-500/20 text-xs font-semibold text-amber-300 backdrop-blur-md mb-5 shadow-xs">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
             <Chip.Label>Ghostscript Engine v12.0 · 100% Free · No Watermarks</Chip.Label>
           </Chip.Root>
 
           <h1 className="text-4xl md:text-6xl font-black tracking-tight text-white mb-4 leading-[1.1]">
-            Combine & Compress <span className="text-[#c0c1ff]">PDF Files</span> Cleanly
+            Combine & Compress <span className="font-editorial italic font-normal text-amber-300">PDF Files</span> Cleanly
           </h1>
 
           <p className="text-base md:text-lg font-normal text-slate-300/70 max-w-xl leading-relaxed">
-            Professional-grade document processing, reimagined for the modern web. Fast, private, and browser-based.
+            Editorial precision document processing, reimagined for high-performance web workflows. Fast, private, and browser-based.
           </p>
         </header>
 
-        {/* Workspace Elevated Glass Card */}
+        {/* Screen 1: Stitch PDF Tool - Workspace */}
         <Card.Root className="glass-panel rounded-[38px] p-6 md:p-10 border border-white/10 shadow-2xl transition-all duration-300">
           
           {/* Tool Switcher Tabs */}
           <Card.Header className="flex justify-center mb-8 p-0 border-none bg-transparent">
-            <div className="inline-flex p-1.5 bg-white/5 rounded-2xl border border-white/10">
+            <div className="inline-flex p-1.5 bg-slate-950/80 rounded-2xl border border-white/10">
               <Button
                 variant={activeTab === 'combine' ? 'primary' : 'tertiary'}
                 onClick={() => !loading && setActiveTab('combine')}
                 disabled={loading}
                 className={`flex items-center justify-center gap-2 px-8 py-2.5 text-sm font-bold rounded-xl transition-all duration-200 cursor-pointer ${
                   activeTab === 'combine'
-                    ? 'bg-white text-slate-950 shadow-lg'
+                    ? 'bg-amber-400 text-slate-950 shadow-lg shadow-amber-400/20'
                     : 'text-slate-300/60 hover:text-white hover:bg-white/5'
                 }`}
               >
@@ -368,7 +368,7 @@ export default function Home({ setIsProcessing }) {
                 disabled={loading}
                 className={`flex items-center justify-center gap-2 px-8 py-2.5 text-sm font-bold rounded-xl transition-all duration-200 cursor-pointer ${
                   activeTab === 'compress'
-                    ? 'bg-white text-slate-950 shadow-lg'
+                    ? 'bg-amber-400 text-slate-950 shadow-lg shadow-amber-400/20'
                     : 'text-slate-300/60 hover:text-white hover:bg-white/5'
                 }`}
               >
@@ -392,12 +392,12 @@ export default function Home({ setIsProcessing }) {
           )}
 
           <Card.Content className="space-y-8 p-0">
-            {/* Compression Mode Selector Cards */}
+            {/* Compression Mode Selector Profiles */}
             {activeTab === 'compress' && !success && !loading && (
               <div className="animate-fade-in-up">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <Settings className="h-4 w-4 text-indigo-300" />
+                    <Settings className="h-4 w-4 text-amber-300" />
                     <span className="text-xs font-bold uppercase tracking-wider text-slate-300/70">Compression Profile</span>
                   </div>
                   <span className="text-xs text-slate-400">Tuned DPI & JPEG encoding</span>
@@ -436,13 +436,13 @@ export default function Home({ setIsProcessing }) {
                       onClick={() => setCompressionLevel(mode.id)}
                       className={`p-5 border text-left rounded-3xl flex flex-col justify-between transition-all duration-300 cursor-pointer relative group ${
                         compressionLevel === mode.id
-                          ? 'border-indigo-400/80 bg-indigo-500/10 ring-1 ring-indigo-400/30 shadow-lg'
+                          ? 'border-amber-400/80 bg-amber-500/10 ring-1 ring-amber-400/30 shadow-lg'
                           : 'border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.05]'
                       }`}
                     >
                       {mode.tag && (
                         <Badge.Root className="absolute -top-3 right-4">
-                          <Badge.Label className="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-gradient-to-r from-indigo-400 to-indigo-600 text-slate-950 shadow-md">
+                          <Badge.Label className="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 shadow-md">
                             {mode.tag}
                           </Badge.Label>
                         </Badge.Root>
@@ -456,7 +456,7 @@ export default function Home({ setIsProcessing }) {
                             <Chip.Label>{mode.dpi}</Chip.Label>
                           </Chip.Root>
                         </div>
-                        <span className="inline-block text-xs font-extrabold text-emerald-400">
+                        <span className="inline-block text-xs font-extrabold text-amber-300">
                           {mode.est}
                         </span>
                       </Card.Header>
@@ -465,7 +465,7 @@ export default function Home({ setIsProcessing }) {
                       </Card.Description>
                       <Card.Footer className="pt-3 border-t border-white/5 flex items-center justify-between p-0 bg-transparent">
                         <span className="text-[11px] font-medium text-slate-400">{mode.badge}</span>
-                        <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${compressionLevel === mode.id ? 'border-indigo-400 bg-indigo-400' : 'border-white/20'}`}>
+                        <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${compressionLevel === mode.id ? 'border-amber-400 bg-amber-400' : 'border-white/20'}`}>
                           {compressionLevel === mode.id && <div className="w-1.5 h-1.5 bg-slate-950 rounded-full" />}
                         </div>
                       </Card.Footer>
@@ -475,15 +475,15 @@ export default function Home({ setIsProcessing }) {
               </div>
             )}
 
-            {/* AetherPDF Dropzone Unit */}
+            {/* Stitch Editorial Workspace Upload Dropzone */}
             {!success && !loading && (
               <div
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 onClick={handleBrowseFiles}
-                className={`relative border border-white/10 hover:border-white/20 bg-slate-900/40 rounded-[32px] p-10 md:p-16 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-500 group ${
-                  isDragging ? 'border-indigo-400 bg-indigo-950/30 scale-[1.005]' : ''
+                className={`relative border border-white/10 hover:border-white/20 bg-slate-950/50 rounded-[32px] p-10 md:p-16 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-500 group ${
+                  isDragging ? 'border-amber-400 bg-amber-950/30 scale-[1.005]' : ''
                 } ${loading ? 'pointer-events-none opacity-60' : ''}`}
               >
                 <input
@@ -495,8 +495,8 @@ export default function Home({ setIsProcessing }) {
                   className="hidden"
                 />
 
-                <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-indigo-500/10 to-emerald-500/10 border border-white/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500 shadow-md">
-                  <Upload className="h-9 w-9 text-indigo-300" />
+                <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-amber-500/10 to-indigo-500/10 border border-white/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500 shadow-md">
+                  <Upload className="h-9 w-9 text-amber-300" />
                 </div>
 
                 <h3 className="text-2xl font-bold text-white mb-2">Upload your documents</h3>
@@ -507,7 +507,7 @@ export default function Home({ setIsProcessing }) {
                 <Button
                   variant="primary"
                   onClick={(e) => { e.stopPropagation(); handleBrowseFiles(); }}
-                  className="px-10 py-3.5 rounded-2xl bg-white text-slate-950 font-bold text-sm shadow-xl hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                  className="px-10 py-3.5 rounded-2xl bg-amber-400 text-slate-950 font-bold text-sm shadow-xl hover:scale-105 active:scale-95 transition-all cursor-pointer hover:bg-amber-300"
                 >
                   Select Files
                 </Button>
@@ -518,7 +518,7 @@ export default function Home({ setIsProcessing }) {
               </div>
             )}
 
-            {/* Selected File List & Reordering */}
+            {/* Selected File List & Reordering Queue */}
             {files.length > 0 && !success && !loading && (
               <div className="animate-fade-in-up space-y-4">
                 <div className="flex items-center justify-between">
@@ -532,14 +532,14 @@ export default function Home({ setIsProcessing }) {
                     <Button
                       variant="tertiary"
                       onClick={handleBrowseFiles}
-                      className="text-xs font-bold text-indigo-300 hover:text-indigo-200 flex items-center gap-1.5 cursor-pointer border border-indigo-400/30 px-3.5 py-1.5 rounded-xl bg-indigo-500/10 transition-colors"
+                      className="text-xs font-bold text-amber-300 hover:text-amber-200 flex items-center gap-1.5 cursor-pointer border border-amber-400/30 px-3.5 py-1.5 rounded-xl bg-amber-500/10 transition-colors"
                     >
                       <Plus className="h-3.5 w-3.5" /> Add Files
                     </Button>
                   )}
                 </div>
 
-                <div className="border border-white/10 rounded-2xl overflow-hidden divide-y divide-white/5 bg-slate-950/40">
+                <div className="border border-white/10 rounded-2xl overflow-hidden divide-y divide-white/5 bg-slate-950/60">
                   {files.map((file, idx) => {
                     const key = `${file.name}-${file.size}-${file.lastModified}`;
                     const previewData = previews[key];
@@ -557,8 +557,8 @@ export default function Home({ setIsProcessing }) {
                             <GripVertical className="h-4.5 w-4.5" />
                           </div>
                         )}
-                        <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-400/20 flex items-center justify-center shrink-0">
-                          <FileText className="h-5 w-5 text-indigo-300" />
+                        <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-400/20 flex items-center justify-center shrink-0">
+                          <FileText className="h-5 w-5 text-amber-300" />
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="text-xs font-bold text-white truncate">{file.name}</p>
@@ -600,7 +600,7 @@ export default function Home({ setIsProcessing }) {
                     const key = `${file.name}-${file.size}-${file.lastModified}`;
                     const previewState = previews[key];
                     return (
-                      <Card.Root key={key} className="aspect-[3/4] rounded-2xl border border-white/10 bg-slate-950/60 overflow-hidden relative group hover:border-indigo-400 transition-all shadow-md">
+                      <Card.Root key={key} className="aspect-[3/4] rounded-2xl border border-white/10 bg-slate-950/70 overflow-hidden relative group hover:border-amber-400 transition-all shadow-md">
                         <Chip.Root className="absolute top-2 left-2 bg-slate-950/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-md z-10">
                           <Chip.Label>#{idx + 1}</Chip.Label>
                         </Chip.Root>
@@ -657,9 +657,9 @@ export default function Home({ setIsProcessing }) {
                 <div className="w-full max-w-md space-y-6">
                   <div className="relative w-20 h-20 mx-auto">
                     <div className="absolute inset-0 rounded-full border-4 border-white/10" />
-                    <div className="absolute inset-0 rounded-full border-4 border-t-indigo-400 animate-spin" />
+                    <div className="absolute inset-0 rounded-full border-4 border-t-amber-400 animate-spin" />
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <RefreshCw className="h-7 w-7 text-indigo-400 animate-pulse" />
+                      <RefreshCw className="h-7 w-7 text-amber-400 animate-pulse" />
                     </div>
                   </div>
 
@@ -667,7 +667,7 @@ export default function Home({ setIsProcessing }) {
                     <h4 className="text-lg font-bold text-white">
                       {activeTab === 'combine' ? 'Combining PDF Documents...' : 'Executing Ghostscript Optimization...'}
                     </h4>
-                    <p className="text-xs font-semibold text-indigo-300 mt-1">
+                    <p className="text-xs font-semibold text-amber-300 mt-1">
                       {progress < 30 ? 'Analyzing page streams...' : progress < 70 ? 'Downsampling image & content streams...' : 'Building optimized output PDF...'}
                     </p>
                   </div>
@@ -679,7 +679,7 @@ export default function Home({ setIsProcessing }) {
                     </div>
                     <div className="w-full bg-white/5 rounded-full h-3 overflow-hidden border border-white/10">
                       <div
-                        className="bg-gradient-to-r from-indigo-400 to-emerald-400 h-full rounded-full transition-all duration-300 ease-out"
+                        className="bg-gradient-to-r from-amber-400 to-emerald-400 h-full rounded-full transition-all duration-300 ease-out"
                         style={{ width: `${progress}%` }}
                       />
                     </div>
@@ -688,7 +688,7 @@ export default function Home({ setIsProcessing }) {
               </div>
             )}
 
-            {/* AetherPDF - Success Mastery View */}
+            {/* Screen 2: Stitch Processing Complete View */}
             {success && (
               <div className="py-10 flex flex-col items-center text-center animate-pop-in">
                 {/* Check Pulse Halo Ring */}
@@ -700,10 +700,10 @@ export default function Home({ setIsProcessing }) {
                 </div>
 
                 <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-2 tracking-tight">
-                  Optimization Complete
+                  Processing Complete
                 </h2>
                 <p className="text-sm md:text-base text-slate-300/70 max-w-md mb-10 leading-relaxed">
-                  We've optimized your document using our Ghostscript engine, maintaining visual clarity.
+                  We've optimized your document using our Ghostscript engine, maintaining pixel-perfect clarity.
                 </p>
 
                 {/* Metrics Cards Grid */}
@@ -711,8 +711,8 @@ export default function Home({ setIsProcessing }) {
                   {/* File Size Metric Card */}
                   <Card.Root className="glass-panel p-6 rounded-[28px] border border-white/10 text-left relative overflow-hidden group">
                     <div className="flex items-center gap-2.5 mb-4">
-                      <div className="p-2 bg-indigo-500/10 rounded-xl">
-                        <BarChart3 className="h-5 w-5 text-indigo-300" />
+                      <div className="p-2 bg-amber-500/10 rounded-xl">
+                        <BarChart3 className="h-5 w-5 text-amber-300" />
                       </div>
                       <span className="text-xs font-bold uppercase tracking-widest text-slate-300/70">Compression Ratio</span>
                     </div>
@@ -724,9 +724,9 @@ export default function Home({ setIsProcessing }) {
                         </span>
                       </div>
                       <div className="flex items-center gap-3">
-                        <ArrowRight className="h-5 w-5 text-indigo-400/40" />
+                        <ArrowRight className="h-5 w-5 text-amber-400/40" />
                         <div className="flex flex-col items-end">
-                          <span className="text-[11px] font-semibold text-indigo-300 mb-0.5">Optimized</span>
+                          <span className="text-[11px] font-semibold text-amber-300 mb-0.5">Optimized</span>
                           <span className="text-3xl font-extrabold text-white">
                             {formatBytes(success.compressedSize || success.originalSize)}
                           </span>
@@ -789,7 +789,7 @@ export default function Home({ setIsProcessing }) {
                       onClick={startOver}
                       className="flex items-center justify-center gap-2 py-4 glass-panel rounded-2xl text-xs font-bold text-slate-200 hover:bg-white/10 transition-all cursor-pointer"
                     >
-                      <RefreshCw className="h-4 w-4 text-indigo-300" />
+                      <RefreshCw className="h-4 w-4 text-amber-300" />
                       <span>Optimize Another</span>
                     </Button>
                   </div>
