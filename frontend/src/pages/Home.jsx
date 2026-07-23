@@ -319,60 +319,55 @@ export default function Home({ setIsProcessing }) {
 
   return (
     <div className="relative min-h-screen editorial-mesh overflow-hidden">
-      {/* Stitch Editorial Premium Floating Atmospheric Orbs */}
-      <div className="floating-orb w-[550px] h-[550px] bg-amber-500/10 top-[-5%] left-[-5%]" />
-      <div className="floating-orb w-[480px] h-[480px] bg-indigo-500/15 bottom-[-5%] right-[-5%]" />
-      <div className="floating-orb w-[360px] h-[360px] bg-emerald-500/10 top-[35%] right-[12%]" />
-
-      {/* Main Container */}
-      <div className="relative z-10 mx-auto max-w-5xl px-4 pt-12 pb-20 md:pt-16 md:pb-24">
+      {/* Main Container - Compact Spacing */}
+      <div className="relative z-10 mx-auto max-w-4xl px-4 pt-4 pb-10 md:pt-6 md:pb-12">
         
-        {/* Stitch Editorial Premium Hero Header */}
-        <header className="text-center mb-10 flex flex-col items-center animate-fade-in-up">
-          <Chip.Root className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/5 border border-amber-500/20 text-xs font-semibold text-amber-300 backdrop-blur-md mb-5 shadow-xs">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-            <Chip.Label>Ghostscript Engine v12.0 · 100% Free · No Watermarks</Chip.Label>
+        {/* Compact Hero Header */}
+        <header className="text-center mb-4 flex flex-col items-center animate-fade-in-up">
+          <Chip.Root className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-indigo-50 dark:bg-white/5 border border-indigo-200 dark:border-amber-500/20 text-[11px] font-semibold text-indigo-700 dark:text-amber-300 mb-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 dark:bg-amber-400 animate-pulse" />
+            <Chip.Label>Ghostscript Engine · 100% Free · No Watermarks</Chip.Label>
           </Chip.Root>
 
-          <h1 className="text-4xl md:text-6xl font-black tracking-tight text-white mb-4 leading-[1.1]">
-            Combine & Compress <span className="font-editorial italic font-normal text-amber-300">PDF Files</span> Cleanly
+          <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-1.5">
+            Combine & Compress <span className="font-editorial italic font-normal text-indigo-600 dark:text-amber-300">PDF Files</span>
           </h1>
 
-          <p className="text-base md:text-lg font-normal text-slate-300/70 max-w-xl leading-relaxed">
-            Editorial precision document processing, reimagined for high-performance web workflows. Fast, private, and browser-based.
+          <p className="text-xs md:text-sm font-medium text-slate-600 dark:text-slate-300/70 max-w-md">
+            Fast, private, browser-based PDF processing. No signups, no quality loss.
           </p>
         </header>
 
-        {/* Screen 1: Stitch PDF Tool - Workspace */}
-        <Card.Root className="glass-panel rounded-[38px] p-6 md:p-10 border border-white/10 shadow-2xl transition-all duration-300">
+        {/* Workspace Elevated Glass Card - Compact Padding */}
+        <Card.Root className="glass-panel rounded-3xl p-4 md:p-6 border border-slate-200 dark:border-white/10 shadow-lg transition-all">
           
           {/* Tool Switcher Tabs */}
-          <Card.Header className="flex justify-center mb-8 p-0 border-none bg-transparent">
-            <div className="inline-flex p-1.5 bg-slate-950/80 rounded-2xl border border-white/10">
+          <Card.Header className="flex justify-center mb-5 p-0 border-none bg-transparent">
+            <div className="inline-flex p-1 bg-slate-100 dark:bg-slate-950/80 rounded-xl border border-slate-200 dark:border-white/10">
               <Button
                 variant={activeTab === 'combine' ? 'primary' : 'tertiary'}
                 onClick={() => !loading && setActiveTab('combine')}
                 disabled={loading}
-                className={`flex items-center justify-center gap-2 px-8 py-2.5 text-sm font-bold rounded-xl transition-all duration-200 cursor-pointer ${
+                className={`flex items-center justify-center gap-2 px-6 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                   activeTab === 'combine'
-                    ? 'bg-amber-400 text-slate-950 shadow-lg shadow-amber-400/20'
-                    : 'text-slate-300/60 hover:text-white hover:bg-white/5'
+                    ? 'bg-indigo-600 text-white dark:bg-amber-400 dark:text-slate-950 shadow-md'
+                    : 'text-slate-600 dark:text-slate-300/60 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                <Layers className="h-4 w-4" />
+                <Layers className="h-3.5 w-3.5" />
                 <span>Combine PDFs</span>
               </Button>
               <Button
                 variant={activeTab === 'compress' ? 'primary' : 'tertiary'}
                 onClick={() => !loading && setActiveTab('compress')}
                 disabled={loading}
-                className={`flex items-center justify-center gap-2 px-8 py-2.5 text-sm font-bold rounded-xl transition-all duration-200 cursor-pointer ${
+                className={`flex items-center justify-center gap-2 px-6 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                   activeTab === 'compress'
-                    ? 'bg-amber-400 text-slate-950 shadow-lg shadow-amber-400/20'
-                    : 'text-slate-300/60 hover:text-white hover:bg-white/5'
+                    ? 'bg-indigo-600 text-white dark:bg-amber-400 dark:text-slate-950 shadow-md'
+                    : 'text-slate-600 dark:text-slate-300/60 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                <Zap className="h-4 w-4" />
+                <Zap className="h-3.5 w-3.5" />
                 <span>Compress PDF</span>
               </Button>
             </div>
@@ -380,30 +375,30 @@ export default function Home({ setIsProcessing }) {
 
           {/* Error Notice */}
           {error && (
-            <Alert.Root variant="secondary" className="mb-6 p-4 bg-rose-950/40 border border-rose-800/50 text-rose-300 rounded-2xl flex items-start gap-3 animate-fade-in-up">
+            <Alert.Root variant="secondary" className="mb-4 p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/50 text-rose-700 dark:text-rose-300 rounded-xl flex items-start gap-2.5 animate-fade-in-up">
               <Alert.Indicator>
-                <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
               </Alert.Indicator>
               <Alert.Content>
-                <Alert.Title className="text-sm font-bold">Notice</Alert.Title>
-                <Alert.Description className="text-sm font-medium leading-relaxed">{error}</Alert.Description>
+                <Alert.Title className="text-xs font-bold">Notice</Alert.Title>
+                <Alert.Description className="text-xs font-medium">{error}</Alert.Description>
               </Alert.Content>
             </Alert.Root>
           )}
 
-          <Card.Content className="space-y-8 p-0">
-            {/* Compression Mode Selector Profiles */}
+          <Card.Content className="space-y-5 p-0">
+            {/* Compression Profiles */}
             {activeTab === 'compress' && !success && !loading && (
               <div className="animate-fade-in-up">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <Settings className="h-4 w-4 text-amber-300" />
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-300/70">Compression Profile</span>
+                <div className="flex items-center justify-between mb-2.5">
+                  <div className="flex items-center gap-1.5">
+                    <Settings className="h-3.5 w-3.5 text-indigo-600 dark:text-amber-300" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Compression Profile</span>
                   </div>
-                  <span className="text-xs text-slate-400">Tuned DPI & JPEG encoding</span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400">Tuned DPI & JPEG encoding</span>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   {[
                     {
                       id: 'high',
@@ -411,7 +406,7 @@ export default function Home({ setIsProcessing }) {
                       badge: 'Smallest File',
                       dpi: '72 DPI',
                       est: '-70% Size',
-                      desc: 'Maximum size reduction for quick web sharing & email limits.'
+                      desc: 'Maximum reduction for email & strict upload limits.'
                     },
                     {
                       id: 'medium',
@@ -420,7 +415,7 @@ export default function Home({ setIsProcessing }) {
                       tag: 'POPULAR',
                       dpi: '150 DPI',
                       est: '-50% Size',
-                      desc: 'The sweet spot. Crystal clear text with significantly smaller size.'
+                      desc: 'Optimal balance of crystal clear text & smaller size.'
                     },
                     {
                       id: 'low',
@@ -428,45 +423,45 @@ export default function Home({ setIsProcessing }) {
                       badge: 'High Detail',
                       dpi: '220 DPI',
                       est: '-25% Size',
-                      desc: 'Preserve professional detail. Ideal for printing & presentation.'
+                      desc: 'Preserves high image detail for print & presentations.'
                     }
                   ].map(mode => (
                     <Card.Root
                       key={mode.id}
                       onClick={() => setCompressionLevel(mode.id)}
-                      className={`p-5 border text-left rounded-3xl flex flex-col justify-between transition-all duration-300 cursor-pointer relative group ${
+                      className={`p-3.5 border text-left rounded-2xl flex flex-col justify-between transition-all cursor-pointer relative ${
                         compressionLevel === mode.id
-                          ? 'border-amber-400/80 bg-amber-500/10 ring-1 ring-amber-400/30 shadow-lg'
-                          : 'border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.05]'
+                          ? 'border-indigo-600 dark:border-amber-400 bg-indigo-50/70 dark:bg-amber-500/10 ring-1 ring-indigo-500/30 dark:ring-amber-400/30'
+                          : 'border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] hover:border-slate-300 dark:hover:border-white/20'
                       }`}
                     >
                       {mode.tag && (
-                        <Badge.Root className="absolute -top-3 right-4">
-                          <Badge.Label className="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 shadow-md">
+                        <Badge.Root className="absolute -top-2.5 right-3">
+                          <Badge.Label className="px-2.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-indigo-600 text-white dark:bg-amber-400 dark:text-slate-950">
                             {mode.tag}
                           </Badge.Label>
                         </Badge.Root>
                       )}
-                      <Card.Header className="p-0 mb-2 border-none bg-transparent">
-                        <div className="flex items-center justify-between gap-2 mb-1">
-                          <Card.Title className="text-base font-bold text-white">
+                      <Card.Header className="p-0 mb-1 border-none bg-transparent">
+                        <div className="flex items-center justify-between gap-1.5 mb-0.5">
+                          <Card.Title className="text-xs font-bold text-slate-900 dark:text-white">
                             {mode.name}
                           </Card.Title>
-                          <Chip.Root className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-white/10 text-slate-300">
+                          <Chip.Root className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300">
                             <Chip.Label>{mode.dpi}</Chip.Label>
                           </Chip.Root>
                         </div>
-                        <span className="inline-block text-xs font-extrabold text-amber-300">
+                        <span className="inline-block text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400">
                           {mode.est}
                         </span>
                       </Card.Header>
-                      <Card.Description className="text-xs text-slate-300/70 leading-relaxed mb-4">
+                      <Card.Description className="text-[11px] text-slate-600 dark:text-slate-300/70 leading-normal mb-2">
                         {mode.desc}
                       </Card.Description>
-                      <Card.Footer className="pt-3 border-t border-white/5 flex items-center justify-between p-0 bg-transparent">
-                        <span className="text-[11px] font-medium text-slate-400">{mode.badge}</span>
-                        <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${compressionLevel === mode.id ? 'border-amber-400 bg-amber-400' : 'border-white/20'}`}>
-                          {compressionLevel === mode.id && <div className="w-1.5 h-1.5 bg-slate-950 rounded-full" />}
+                      <Card.Footer className="pt-2 border-t border-slate-200 dark:border-white/5 flex items-center justify-between p-0 bg-transparent">
+                        <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400">{mode.badge}</span>
+                        <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${compressionLevel === mode.id ? 'border-indigo-600 bg-indigo-600 dark:border-amber-400 dark:bg-amber-400' : 'border-slate-300 dark:border-white/20'}`}>
+                          {compressionLevel === mode.id && <div className="w-1 h-1 bg-white dark:bg-slate-950 rounded-full" />}
                         </div>
                       </Card.Footer>
                     </Card.Root>
@@ -475,15 +470,17 @@ export default function Home({ setIsProcessing }) {
               </div>
             )}
 
-            {/* Stitch Editorial Workspace Upload Dropzone */}
+            {/* Compact Dropzone Unit */}
             {!success && !loading && (
               <div
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 onClick={handleBrowseFiles}
-                className={`relative border border-white/10 hover:border-white/20 bg-slate-950/50 rounded-[32px] p-10 md:p-16 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-500 group ${
-                  isDragging ? 'border-amber-400 bg-amber-950/30 scale-[1.005]' : ''
+                className={`relative border-2 border-dashed rounded-2xl py-6 md:py-8 px-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center space-y-2.5 ${
+                  isDragging
+                    ? 'border-indigo-600 bg-indigo-50 dark:border-amber-400 dark:bg-amber-950/30'
+                    : 'border-slate-300 dark:border-white/10 hover:border-indigo-500 dark:hover:border-amber-400 bg-slate-50/70 dark:bg-slate-950/50 hover:bg-indigo-50/40 dark:hover:bg-white/[0.02]'
                 } ${loading ? 'pointer-events-none opacity-60' : ''}`}
               >
                 <input
@@ -495,36 +492,30 @@ export default function Home({ setIsProcessing }) {
                   className="hidden"
                 />
 
-                <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-amber-500/10 to-indigo-500/10 border border-white/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500 shadow-md">
-                  <Upload className="h-9 w-9 text-amber-300" />
+                <div className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 shadow-xs text-indigo-600 dark:text-amber-300">
+                  <Upload className="h-6 w-6" />
                 </div>
 
-                <h3 className="text-2xl font-bold text-white mb-2">Upload your documents</h3>
-                <p className="text-sm text-slate-300/60 mb-8 max-w-xs">
-                  Drag & drop your {activeTab === 'combine' ? 'PDF files' : 'PDF document'} anywhere or click to browse
-                </p>
+                <div className="space-y-0.5">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">Upload your documents</h3>
+                  <p className="text-xs text-slate-600 dark:text-slate-300/70">
+                    Drag & drop {activeTab === 'combine' ? 'PDF files' : 'a PDF document'} here, or <span className="text-indigo-600 dark:text-amber-300 underline font-semibold">browse</span>
+                  </p>
+                </div>
 
-                <Button
-                  variant="primary"
-                  onClick={(e) => { e.stopPropagation(); handleBrowseFiles(); }}
-                  className="px-10 py-3.5 rounded-2xl bg-amber-400 text-slate-950 font-bold text-sm shadow-xl hover:scale-105 active:scale-95 transition-all cursor-pointer hover:bg-amber-300"
-                >
-                  Select Files
-                </Button>
-
-                <p className="mt-6 text-[11px] font-extrabold text-slate-400/50 tracking-widest uppercase">
-                  Max size 200MB • No Watermark
+                <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 tracking-wider uppercase pt-1">
+                  Max size 200MB • No Watermarks
                 </p>
               </div>
             )}
 
-            {/* Selected File List & Reordering Queue */}
+            {/* Selected File List */}
             {files.length > 0 && !success && !loading && (
-              <div className="animate-fade-in-up space-y-4">
+              <div className="animate-fade-in-up space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <FileCheck className="h-4 w-4 text-emerald-400" />
-                    <span className="text-xs font-extrabold uppercase tracking-wider text-slate-300/70">
+                  <div className="flex items-center gap-1.5">
+                    <FileCheck className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                       {files.length} File{files.length !== 1 ? 's' : ''} Selected ({formatBytes(totalFilesSize)})
                     </span>
                   </div>
@@ -532,14 +523,14 @@ export default function Home({ setIsProcessing }) {
                     <Button
                       variant="tertiary"
                       onClick={handleBrowseFiles}
-                      className="text-xs font-bold text-amber-300 hover:text-amber-200 flex items-center gap-1.5 cursor-pointer border border-amber-400/30 px-3.5 py-1.5 rounded-xl bg-amber-500/10 transition-colors"
+                      className="text-xs font-semibold text-indigo-600 dark:text-amber-300 hover:underline flex items-center gap-1 cursor-pointer border border-indigo-200 dark:border-amber-400/30 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-amber-500/10"
                     >
-                      <Plus className="h-3.5 w-3.5" /> Add Files
+                      <Plus className="h-3 w-3" /> Add Files
                     </Button>
                   )}
                 </div>
 
-                <div className="border border-white/10 rounded-2xl overflow-hidden divide-y divide-white/5 bg-slate-950/60">
+                <div className="border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden divide-y divide-slate-200 dark:divide-white/5 bg-slate-50/80 dark:bg-slate-950/60">
                   {files.map((file, idx) => {
                     const key = `${file.name}-${file.size}-${file.lastModified}`;
                     const previewData = previews[key];
@@ -550,24 +541,24 @@ export default function Home({ setIsProcessing }) {
                         onDragStart={(e) => handleDragStart(e, idx)}
                         onDragOver={(e) => handleItemDragOver(e, idx)}
                         onDragEnd={handleDragEnd}
-                        className="flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.04] transition-colors select-none group"
+                        className="flex items-center gap-3 px-3.5 py-2.5 hover:bg-slate-100 dark:hover:bg-white/[0.04] transition-colors select-none"
                       >
                         {activeTab === 'combine' && (
-                          <div className="cursor-grab active:cursor-grabbing text-slate-500 group-hover:text-slate-300">
-                            <GripVertical className="h-4.5 w-4.5" />
+                          <div className="cursor-grab text-slate-400 dark:text-slate-600">
+                            <GripVertical className="h-4 w-4" />
                           </div>
                         )}
-                        <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-400/20 flex items-center justify-center shrink-0">
-                          <FileText className="h-5 w-5 text-amber-300" />
+                        <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-amber-500/10 border border-indigo-100 dark:border-amber-400/20 flex items-center justify-center shrink-0">
+                          <FileText className="h-4 w-4 text-indigo-600 dark:text-amber-300" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-bold text-white truncate">{file.name}</p>
-                          <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
+                          <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{file.name}</p>
+                          <div className="flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400">
                             <span>{formatBytes(file.size)}</span>
                             {previewData && previewData.numPages && (
                               <>
                                 <span>·</span>
-                                <span className="font-medium text-slate-300">{previewData.numPages} Page{previewData.numPages !== 1 ? 's' : ''}</span>
+                                <span className="font-semibold text-slate-700 dark:text-slate-300">{previewData.numPages} Page{previewData.numPages !== 1 ? 's' : ''}</span>
                               </>
                             )}
                           </div>
@@ -576,10 +567,10 @@ export default function Home({ setIsProcessing }) {
                           <Button
                             variant="tertiary"
                             onClick={() => removeFile(idx)}
-                            className="p-2 text-slate-400 hover:text-rose-400 rounded-lg hover:bg-rose-950/40 transition-all cursor-pointer"
+                            className="p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-all cursor-pointer"
                             title="Remove file"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         )}
                       </div>
@@ -591,31 +582,31 @@ export default function Home({ setIsProcessing }) {
 
             {/* Page Grid Preview */}
             {files.length > 0 && !success && !loading && (
-              <div className="animate-fade-in-up space-y-3">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-300/70 block">
-                  Visual Page Grid Preview
+              <div className="animate-fade-in-up space-y-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 block">
+                  Visual Page Grid
                 </span>
-                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2.5">
                   {files.map((file, idx) => {
                     const key = `${file.name}-${file.size}-${file.lastModified}`;
                     const previewState = previews[key];
                     return (
-                      <Card.Root key={key} className="aspect-[3/4] rounded-2xl border border-white/10 bg-slate-950/70 overflow-hidden relative group hover:border-amber-400 transition-all shadow-md">
-                        <Chip.Root className="absolute top-2 left-2 bg-slate-950/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-md z-10">
+                      <Card.Root key={key} className="aspect-[3/4] rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-slate-950/70 overflow-hidden relative shadow-xs">
+                        <Chip.Root className="absolute top-1.5 left-1.5 bg-slate-900/90 text-white text-[9px] font-bold px-1.5 py-0.5 rounded z-10">
                           <Chip.Label>#{idx + 1}</Chip.Label>
                         </Chip.Root>
-                        <Card.Content className="w-full h-full flex items-center justify-center p-2">
+                        <Card.Content className="w-full h-full flex items-center justify-center p-1.5">
                           {!previewState || previewState.status === 'loading' ? (
-                            <div className="w-full h-full rounded-xl bg-white/5 animate-pulse flex items-center justify-center">
-                              <RefreshCw className="h-4 w-4 text-slate-400 animate-spin" />
+                            <div className="w-full h-full rounded bg-slate-200/50 dark:bg-white/5 animate-pulse flex items-center justify-center">
+                              <RefreshCw className="h-3.5 w-3.5 text-slate-400 animate-spin" />
                             </div>
                           ) : previewState.status === 'error' ? (
-                            <div className="flex flex-col items-center gap-1 text-slate-400">
-                              <FileText className="h-5 w-5" />
-                              <span className="text-[10px] font-semibold">PDF Ready</span>
+                            <div className="flex flex-col items-center gap-0.5 text-slate-400">
+                              <FileText className="h-4 w-4" />
+                              <span className="text-[9px] font-semibold">PDF Ready</span>
                             </div>
                           ) : (
-                            <img src={previewState.url} alt={file.name} className="object-contain max-h-full max-w-full rounded-md group-hover:scale-105 transition-transform duration-200" />
+                            <img src={previewState.url} alt={file.name} className="object-contain max-h-full max-w-full rounded shadow-xs" />
                           )}
                         </Card.Content>
                       </Card.Root>
@@ -627,59 +618,59 @@ export default function Home({ setIsProcessing }) {
 
             {/* Action Bar */}
             {files.length > 0 && !success && !loading && (
-              <Card.Footer className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-white/10 animate-fade-in-up p-0 bg-transparent">
+              <Card.Footer className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-200 dark:border-white/10 animate-fade-in-up p-0 bg-transparent">
                 <Button
                   variant="primary"
                   onClick={handleProcess}
                   disabled={isButtonDisabled}
-                  className={`flex-1 rounded-2xl py-4 px-6 text-base font-extrabold transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer shadow-xl ${
+                  className={`flex-1 rounded-xl py-3 px-5 text-sm font-extrabold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md ${
                     isButtonDisabled
-                      ? 'bg-white/10 text-slate-500 cursor-not-allowed shadow-none'
-                      : 'download-btn-glow text-slate-950 hover:scale-[1.01]'
+                      ? 'bg-slate-200 dark:bg-white/10 text-slate-400 dark:text-slate-500 cursor-not-allowed shadow-none'
+                      : 'bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-amber-400 dark:hover:bg-amber-300 dark:text-slate-950'
                   }`}
                 >
                   <span>{activeTab === 'combine' ? 'Combine PDF Documents' : 'Compress PDF Now'}</span>
-                  {!isButtonDisabled && <ArrowRight className="h-5 w-5" />}
+                  {!isButtonDisabled && <ArrowRight className="h-4 w-4" />}
                 </Button>
                 <Button
                   variant="tertiary"
                   onClick={startOver}
-                  className="px-6 py-4 rounded-2xl text-xs font-semibold text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors cursor-pointer"
+                  className="px-5 py-3 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 transition-colors cursor-pointer"
                 >
                   Clear Workspace
                 </Button>
               </Card.Footer>
             )}
 
-            {/* Loading Processing Pipeline */}
+            {/* Loading Processing State */}
             {loading && (
-              <div className="py-14 flex flex-col items-center justify-center text-center animate-fade-in-up">
-                <div className="w-full max-w-md space-y-6">
-                  <div className="relative w-20 h-20 mx-auto">
-                    <div className="absolute inset-0 rounded-full border-4 border-white/10" />
-                    <div className="absolute inset-0 rounded-full border-4 border-t-amber-400 animate-spin" />
+              <div className="py-10 flex flex-col items-center justify-center text-center animate-fade-in-up">
+                <div className="w-full max-w-sm space-y-4">
+                  <div className="relative w-14 h-14 mx-auto">
+                    <div className="absolute inset-0 rounded-full border-3 border-slate-200 dark:border-white/10" />
+                    <div className="absolute inset-0 rounded-full border-3 border-t-indigo-600 dark:border-t-amber-400 animate-spin" />
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <RefreshCw className="h-7 w-7 text-amber-400 animate-pulse" />
+                      <RefreshCw className="h-5 w-5 text-indigo-600 dark:text-amber-400 animate-pulse" />
                     </div>
                   </div>
 
                   <div>
-                    <h4 className="text-lg font-bold text-white">
+                    <h4 className="text-base font-bold text-slate-900 dark:text-white">
                       {activeTab === 'combine' ? 'Combining PDF Documents...' : 'Executing Ghostscript Optimization...'}
                     </h4>
-                    <p className="text-xs font-semibold text-amber-300 mt-1">
+                    <p className="text-xs font-semibold text-indigo-600 dark:text-amber-300 mt-0.5">
                       {progress < 30 ? 'Analyzing page streams...' : progress < 70 ? 'Downsampling image & content streams...' : 'Building optimized output PDF...'}
                     </p>
                   </div>
 
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-xs font-bold text-slate-300 px-1">
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-xs font-bold text-slate-700 dark:text-slate-300 px-1">
                       <span>Processing Pipeline</span>
                       <span>{progress}%</span>
                     </div>
-                    <div className="w-full bg-white/5 rounded-full h-3 overflow-hidden border border-white/10">
+                    <div className="w-full bg-slate-200 dark:bg-white/5 rounded-full h-2.5 overflow-hidden border border-slate-300 dark:border-white/10">
                       <div
-                        className="bg-gradient-to-r from-amber-400 to-emerald-400 h-full rounded-full transition-all duration-300 ease-out"
+                        className="bg-indigo-600 dark:bg-amber-400 h-full rounded-full transition-all duration-300 ease-out"
                         style={{ width: `${progress}%` }}
                       />
                     </div>
@@ -688,108 +679,84 @@ export default function Home({ setIsProcessing }) {
               </div>
             )}
 
-            {/* Screen 2: Stitch Processing Complete View */}
+            {/* Success View */}
             {success && (
-              <div className="py-10 flex flex-col items-center text-center animate-pop-in">
-                {/* Check Pulse Halo Ring */}
-                <div className="relative mb-8">
-                  <div className="absolute inset-0 bg-emerald-400/20 blur-3xl rounded-full scale-150 animate-pulse" />
-                  <div className="relative w-28 h-28 rounded-full glass-panel flex items-center justify-center border border-emerald-400/30 animate-check-pulse">
-                    <CheckCircle className="h-16 w-16 text-emerald-400 drop-shadow-[0_0_15px_rgba(78,222,163,0.6)]" />
+              <div className="py-6 flex flex-col items-center text-center animate-pop-in">
+                <div className="relative mb-6">
+                  <div className="relative w-20 h-20 rounded-full bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center border border-emerald-300 dark:border-emerald-400/30 animate-check-pulse">
+                    <CheckCircle className="h-10 w-10 text-emerald-600 dark:text-emerald-400" />
                   </div>
                 </div>
 
-                <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-2 tracking-tight">
+                <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white mb-1 tracking-tight">
                   Processing Complete
                 </h2>
-                <p className="text-sm md:text-base text-slate-300/70 max-w-md mb-10 leading-relaxed">
-                  We've optimized your document using our Ghostscript engine, maintaining pixel-perfect clarity.
+                <p className="text-xs text-slate-600 dark:text-slate-300 max-w-sm mb-6">
+                  Your PDF has been processed and optimized cleanly.
                 </p>
 
                 {/* Metrics Cards Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-2xl mb-10">
-                  {/* File Size Metric Card */}
-                  <Card.Root className="glass-panel p-6 rounded-[28px] border border-white/10 text-left relative overflow-hidden group">
-                    <div className="flex items-center gap-2.5 mb-4">
-                      <div className="p-2 bg-amber-500/10 rounded-xl">
-                        <BarChart3 className="h-5 w-5 text-amber-300" />
-                      </div>
-                      <span className="text-xs font-bold uppercase tracking-widest text-slate-300/70">Compression Ratio</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-lg mb-6">
+                  <Card.Root className="bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-white/10 p-4 rounded-2xl text-left">
+                    <div className="flex items-center gap-2 mb-2">
+                      <BarChart3 className="h-4 w-4 text-indigo-600 dark:text-amber-300" />
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Compression Ratio</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <div className="flex flex-col">
-                        <span className="text-[11px] text-slate-400 mb-0.5">Original</span>
-                        <span className="text-lg font-semibold text-slate-400/60 line-through">
-                          {formatBytes(success.originalSize)}
-                        </span>
+                      <div>
+                        <span className="text-[10px] text-slate-500 block">Original</span>
+                        <span className="text-sm font-semibold text-slate-400 line-through">{formatBytes(success.originalSize)}</span>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <ArrowRight className="h-5 w-5 text-amber-400/40" />
-                        <div className="flex flex-col items-end">
-                          <span className="text-[11px] font-semibold text-amber-300 mb-0.5">Optimized</span>
-                          <span className="text-3xl font-extrabold text-white">
-                            {formatBytes(success.compressedSize || success.originalSize)}
-                          </span>
-                        </div>
+                      <div className="text-right">
+                        <span className="text-[10px] text-indigo-600 dark:text-amber-300 block font-semibold">Optimized</span>
+                        <span className="text-xl font-extrabold text-slate-900 dark:text-white">{formatBytes(success.compressedSize || success.originalSize)}</span>
                       </div>
                     </div>
                   </Card.Root>
 
-                  {/* Savings Metric Card */}
-                  <Card.Root className="glass-panel p-6 rounded-[28px] border border-emerald-400/20 text-left relative overflow-hidden group">
-                    <div className="flex items-center gap-2.5 mb-4">
-                      <div className="p-2 bg-emerald-500/10 rounded-xl">
-                        <Bolt className="h-5 w-5 text-emerald-400" />
-                      </div>
-                      <span className="text-xs font-bold uppercase tracking-widest text-slate-300/70">Storage Saved</span>
+                  <Card.Root className="bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-white/10 p-4 rounded-2xl text-left">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Bolt className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Storage Saved</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-4xl font-extrabold text-emerald-400">
-                        -{success.savingsPercent || 0}%
-                      </span>
-                      <div className="flex flex-col items-end gap-1">
-                        <Chip.Root className="bg-emerald-500/20 px-3 py-1 rounded-full border border-emerald-400/30 text-emerald-300 text-xs font-bold">
-                          <Chip.Label>Storage Recovered</Chip.Label>
-                        </Chip.Root>
-                        {success.savedBytes > 0 && (
-                          <span className="text-[11px] text-slate-400">
-                            {formatBytes(success.savedBytes)} saved
-                          </span>
-                        )}
-                      </div>
+                      <span className="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">-{success.savingsPercent || 0}%</span>
+                      {success.savedBytes > 0 && (
+                        <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">{formatBytes(success.savedBytes)} saved</span>
+                      )}
                     </div>
                   </Card.Root>
                 </div>
 
                 {/* Actions Grid */}
-                <div className="w-full max-w-2xl flex flex-col gap-4">
+                <div className="w-full max-w-lg flex flex-col gap-3">
                   <Button
                     variant="primary"
                     onClick={async () => {
                       setShowToast(true);
                       await handleDownload(success.downloadUrl, success.filename);
                     }}
-                    className="download-btn-glow group relative w-full py-5 rounded-[24px] overflow-hidden flex items-center justify-center gap-3 text-slate-950 text-lg font-extrabold cursor-pointer"
+                    className="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-amber-400 dark:hover:bg-amber-300 dark:text-slate-950 text-sm font-extrabold flex items-center justify-center gap-2 cursor-pointer shadow-md"
                   >
-                    <Download className="h-6 w-6 group-hover:scale-110 transition-transform" />
+                    <Download className="h-4.5 w-4.5" />
                     <span>Download Optimized PDF</span>
                   </Button>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-2.5">
                     <Button
                       variant="secondary"
                       onClick={() => copyDownloadLink(success.downloadUrl)}
-                      className="flex items-center justify-center gap-2 py-4 glass-panel rounded-2xl text-xs font-bold text-slate-200 hover:bg-white/10 transition-all cursor-pointer"
+                      className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-200 dark:hover:bg-white/10 transition-all cursor-pointer"
                     >
-                      {copiedLink ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
+                      {copiedLink ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
                       <span>{copiedLink ? 'Link Copied!' : 'Copy Share Link'}</span>
                     </Button>
                     <Button
                       variant="tertiary"
                       onClick={startOver}
-                      className="flex items-center justify-center gap-2 py-4 glass-panel rounded-2xl text-xs font-bold text-slate-200 hover:bg-white/10 transition-all cursor-pointer"
+                      className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-200 dark:hover:bg-white/10 transition-all cursor-pointer"
                     >
-                      <RefreshCw className="h-4 w-4 text-amber-300" />
+                      <RefreshCw className="h-3.5 w-3.5 text-indigo-600 dark:text-amber-300" />
                       <span>Optimize Another</span>
                     </Button>
                   </div>
@@ -801,8 +768,8 @@ export default function Home({ setIsProcessing }) {
 
         {/* Floating Toast Notification */}
         {showToast && (
-          <div className="fixed bottom-6 right-6 bg-slate-900 text-white px-5 py-4 rounded-2xl shadow-2xl flex items-center gap-3 text-xs font-extrabold animate-fade-in-up z-50 border border-white/10 glass-panel">
-            <CheckCircle className="h-4.5 w-4.5 text-emerald-400" />
+          <div className="fixed bottom-6 right-6 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 text-xs font-bold animate-fade-in-up z-50 border border-slate-800">
+            <CheckCircle className="h-4 w-4 text-emerald-400" />
             <span>Download Starting...</span>
           </div>
         )}

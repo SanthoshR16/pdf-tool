@@ -10,7 +10,7 @@
 /* ─── Base ─── */
 @layer base {
   body {
-    @apply bg-[#070d17] text-slate-100 antialiased selection:bg-amber-500/30 selection:text-amber-200;
+    @apply bg-slate-50 dark:bg-[#070d17] text-slate-900 dark:text-slate-100 antialiased selection:bg-indigo-500/20 selection:text-indigo-600 dark:selection:text-amber-200;
     font-family: 'Plus Jakarta Sans', 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -19,7 +19,7 @@
 
   /* Focus ring for accessibility */
   :focus-visible {
-    @apply outline-2 outline-offset-2 outline-amber-400;
+    @apply outline-2 outline-offset-2 outline-indigo-600 dark:outline-amber-400;
   }
 }
 
@@ -30,60 +30,53 @@
 /* ─── Custom Scrollbars ─── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 999px; }
-::-webkit-scrollbar-thumb:hover { background: #334155; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+.dark ::-webkit-scrollbar-thumb { background: #1e293b; }
 
-/* ─── Editorial Mesh Gradient & Floating Orbs ─── */
+/* ─── Editorial Mesh Gradient ─── */
 .editorial-mesh {
-  background: radial-gradient(at 10% 10%, rgba(245, 158, 11, 0.07) 0px, transparent 50%),
-              radial-gradient(at 90% 90%, rgba(129, 140, 248, 0.08) 0px, transparent 50%),
-              radial-gradient(at 50% 50%, rgba(16, 185, 129, 0.05) 0px, transparent 60%);
+  background: radial-gradient(at 10% 10%, rgba(245, 158, 11, 0.04) 0px, transparent 50%),
+              radial-gradient(at 90% 90%, rgba(99, 102, 241, 0.05) 0px, transparent 50%);
 }
 
-.floating-orb {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(90px);
-  z-index: -1;
-  opacity: 0.18;
-  animation: floatOrb 22s infinite alternate ease-in-out;
-}
-
-@keyframes floatOrb {
-  0% { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(70px, 50px) scale(1.18); }
-}
-
-/* ─── Glassmorphism & Custom Effects ─── */
+/* ─── Glassmorphism & Surface Contrast ─── */
 .glass-panel {
-  background: rgba(15, 23, 42, 0.65);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08);
+}
+
+.dark .glass-panel {
+  background: rgba(15, 23, 42, 0.85);
   backdrop-filter: blur(28px);
   -webkit-backdrop-filter: blur(28px);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 20px 50px 0 rgba(0, 0, 0, 0.5);
 }
 
-.glow-amber {
-  box-shadow: 0 0 35px -5px rgba(245, 158, 11, 0.35);
-}
-
-.glow-emerald {
-  box-shadow: 0 0 35px -5px rgba(16, 185, 129, 0.35);
-}
-
 .download-btn-glow {
+  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+  color: #ffffff;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.dark .download-btn-glow {
   background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  color: #0f172a;
 }
 .download-btn-glow:hover {
-  box-shadow: 0 0 35px 5px rgba(245, 158, 11, 0.45);
-  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 0 25px 3px rgba(79, 70, 229, 0.3);
+  transform: translateY(-1px);
+}
+.dark .download-btn-glow:hover {
+  box-shadow: 0 0 30px 4px rgba(245, 158, 11, 0.4);
 }
 
 /* ─── Keyframe Animations ─── */
 @keyframes checkPulse {
   0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
-  70% { box-shadow: 0 0 0 32px rgba(16, 185, 129, 0); }
+  70% { box-shadow: 0 0 0 24px rgba(16, 185, 129, 0); }
   100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
 }
 .animate-check-pulse {
@@ -91,17 +84,17 @@
 }
 
 @keyframes fade-in-up {
-  from { opacity: 0; transform: translateY(14px); }
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 .animate-fade-in-up {
-  animation: fade-in-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fade-in-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes pop-in {
-  0% { transform: scale(0.94); opacity: 0; }
+  0% { transform: scale(0.96); opacity: 0; }
   100% { transform: scale(1); opacity: 1; }
 }
 .animate-pop-in {
-  animation: pop-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: pop-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
