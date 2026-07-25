@@ -18,12 +18,20 @@ import {
   Check,
   FileCheck,
   BarChart3,
-  Bolt
+  Bolt,
+  Image as ImageIcon
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
-// Lazy-load pdf.js only when needed
+const ALLOWED_EXTENSIONS = ['.pdf', '.jpg', '.jpeg', '.png', '.webp', '.bmp', '.tiff'];
+
+const isSupportedFile = (file) => {
+  const name = file.name.toLowerCase();
+  return ALLOWED_EXTENSIONS.some(ext => name.endsWith(ext)) || file.type === 'application/pdf' || file.type.startsWith('image/');
+};
+
+// Lazy-load pdf.js only when needed for PDF rendering
 const loadPdfJs = () => {
   return new Promise((resolve, reject) => {
     if (window['pdfjs-dist/build/pdf']) {
@@ -84,14 +92,26 @@ export default function Home({ setIsProcessing }) {
     }
   }, [showToast]);
 
-  // Thumbnail & page count generation using pdf.js
+  // Thumbnail & page count generation for PDFs and Images
   useEffect(() => {
     if (files.length === 0) return;
-    loadPdfJs().then(pdfjsLib => {
-      files.forEach(file => {
-        const key = `${file.name}-${file.size}-${file.lastModified}`;
-        if (previews[key]) return;
-        setPreviews(prev => ({ ...prev, [key]: { status: 'loading' } }));
+    
+    files.forEach(file => {
+      const key = `${file.name}-${file.size}-${file.lastModified}`;
+      if (previews[key]) return;
+      
+      const isImg = file.type.startsWith('image/') || /\.(jpg|jpeg|png|webp|bmp|tiff)$/i.test(file.name);
+      if (isImg) {
+        const url = URL.createObjectURL(file);
+        setPreviews(prev => ({
+          ...prev,
+          [key]: { status: 'ready', url, numPages: 1, isImage: true }
+        }));
+        return;
+      }
+      
+      setPreviews(prev => ({ ...prev, [key]: { status: 'loading' } }));
+      loadPdfJs().then(pdfjsLib => {
         const reader = new FileReader();
         reader.onload = async () => {
           try {
@@ -108,15 +128,17 @@ export default function Home({ setIsProcessing }) {
             await page.render({ canvasContext: context, viewport }).promise;
             setPreviews(prev => ({
               ...prev,
-              [key]: { status: 'ready', url: canvas.toDataURL(), numPages }
+              [key]: { status: 'ready', url: canvas.toDataURL(), numPages, isImage: false }
             }));
           } catch {
             setPreviews(prev => ({ ...prev, [key]: { status: 'error', numPages: '?' } }));
           }
         };
         reader.readAsArrayBuffer(file);
+      }).catch(() => {
+        setPreviews(prev => ({ ...prev, [key]: { status: 'error', numPages: '?' } }));
       });
-    }).catch(() => {});
+    });
   }, [files, previews]);
 
   const formatBytes = (bytes) => {
@@ -127,34 +149,55 @@ export default function Home({ setIsProcessing }) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   };
 
+  const getExtensionBadge = (filename) => {
+    const ext = filename.split('.').pop().toLowerCase();
+    switch (ext) {
+      case 'pdf':
+        return { label: 'PDF', style: 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800' };
+      case 'jpg':
+      case 'jpeg':
+        return { label: 'JPG', style: 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800' };
+      case 'png':
+        return { label: 'PNG', style: 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800' };
+      case 'webp':
+        return { label: 'WEBP', style: 'bg-cyan-50 dark:bg-cyan-950/60 text-cyan-700 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800' };
+      case 'bmp':
+        return { label: 'BMP', style: 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800' };
+      case 'tiff':
+        return { label: 'TIFF', style: 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800' };
+      default:
+        return { label: ext.toUpperCase(), style: 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700' };
+    }
+  };
+
   const validateAndAddFiles = (selectedFiles) => {
     setError(null);
-    const pdfs = [];
+    const validFiles = [];
     const errors = [];
     const MAX_SIZE = 200 * 1024 * 1024;
-    loadPdfJs().catch(() => {});
+
     for (let f of selectedFiles) {
-      if (!f.name.toLowerCase().endsWith('.pdf') && f.type !== 'application/pdf') {
-        errors.push(`"${f.name}" is not a PDF document.`);
+      if (!isSupportedFile(f)) {
+        errors.push(`"${f.name}" is not a supported file type. Supported extensions: PDF, JPG, PNG, WEBP, BMP, TIFF.`);
         continue;
       }
       if (f.size > MAX_SIZE) {
         errors.push(`"${f.name}" exceeds the maximum 200 MB limit.`);
         continue;
       }
-      pdfs.push(f);
+      validFiles.push(f);
     }
     if (errors.length > 0) setError(errors.join(' '));
-    if (pdfs.length > 0) {
+    if (validFiles.length > 0) {
       if (success) {
         setSuccess(null);
-        setFiles(activeTab === 'compress' ? [pdfs[0]] : pdfs.slice(0, 30));
+        setFiles(activeTab === 'compress' ? [validFiles[0]] : validFiles.slice(0, 30));
       } else {
         if (activeTab === 'compress') {
-          setFiles([pdfs[0]]);
+          setFiles([validFiles[0]]);
         } else {
           setFiles(prev => {
-            const next = [...prev, ...pdfs];
+            const next = [...prev, ...validFiles];
             if (next.length > 30) {
               setError('Maximum of 30 files allowed at once.');
               return next.slice(0, 30);
@@ -187,11 +230,11 @@ export default function Home({ setIsProcessing }) {
   };
   const handleDragEnd = () => setDraggedIndex(null);
 
-  // Process PDF request
+  // Process PDF / Image request
   const handleProcess = async () => {
     if (files.length === 0) return;
     if (activeTab === 'combine' && files.length < 2) {
-      setError('Please select at least 2 PDF files to combine.');
+      setError('Please select at least 2 files to combine.');
       return;
     }
     setLoading(true);
@@ -252,7 +295,7 @@ export default function Home({ setIsProcessing }) {
           isDone = true;
           setProgress(100);
         } else if (statusData.status === 'error') {
-          throw new Error(statusData.error_message || 'PDF processing failed.');
+          throw new Error(statusData.error_message || 'Processing failed.');
         } else {
           setProgress(statusData.progress || 40);
         }
@@ -323,22 +366,31 @@ export default function Home({ setIsProcessing }) {
       <div className="relative z-10 mx-auto max-w-4xl px-4 pt-4 pb-10 md:pt-6 md:pb-12">
         
         {/* Compact Hero Header */}
-        <header className="text-center mb-4 flex flex-col items-center animate-fade-in-up">
+        <header className="text-center mb-5 flex flex-col items-center animate-fade-in-up">
           <Chip.Root className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-indigo-50 dark:bg-white/5 border border-indigo-200 dark:border-amber-500/20 text-[11px] font-semibold text-indigo-700 dark:text-amber-300 mb-2">
             <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 dark:bg-amber-400 animate-pulse" />
-            <Chip.Label>Ghostscript Engine · 100% Free · No Watermarks</Chip.Label>
+            <Chip.Label>Multi-Format Engine · 100% Free · No Watermarks</Chip.Label>
           </Chip.Root>
 
           <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-1.5">
-            Combine & Compress <span className="font-editorial italic font-normal text-indigo-600 dark:text-amber-300">PDF Files</span>
+            Combine & Compress <span className="font-editorial italic font-normal text-indigo-600 dark:text-amber-300">PDF & Images</span>
           </h1>
 
           <p className="text-xs md:text-sm font-medium text-slate-600 dark:text-slate-300/70 max-w-md">
-            Fast, private, browser-based PDF processing. No signups, no quality loss.
+            Fast, private, browser-based file processing. Merge PDFs, JPGs, PNGs, WEBP, BMP & TIFF into crisp PDF documents.
           </p>
+
+          {/* Supported Extension Pills */}
+          <div className="flex flex-wrap items-center justify-center gap-1.5 mt-3">
+            {['PDF', 'JPG', 'PNG', 'WEBP', 'BMP', 'TIFF'].map(ext => (
+              <span key={ext} className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-slate-200/80 dark:bg-white/10 text-slate-700 dark:text-slate-300 tracking-wider">
+                .{ext.toLowerCase()}
+              </span>
+            ))}
+          </div>
         </header>
 
-        {/* Workspace Elevated Glass Card - Compact Padding */}
+        {/* Workspace Elevated Glass Card */}
         <Card.Root className="glass-panel rounded-3xl p-4 md:p-6 border border-slate-200 dark:border-white/10 shadow-lg transition-all">
           
           {/* Tool Switcher Tabs */}
@@ -355,7 +407,7 @@ export default function Home({ setIsProcessing }) {
                 }`}
               >
                 <Layers className="h-3.5 w-3.5" />
-                <span>Combine PDFs</span>
+                <span>Combine Files</span>
               </Button>
               <Button
                 variant={activeTab === 'compress' ? 'primary' : 'tertiary'}
@@ -368,7 +420,7 @@ export default function Home({ setIsProcessing }) {
                 }`}
               >
                 <Zap className="h-3.5 w-3.5" />
-                <span>Compress PDF</span>
+                <span>Compress File</span>
               </Button>
             </div>
           </Card.Header>
@@ -470,7 +522,7 @@ export default function Home({ setIsProcessing }) {
               </div>
             )}
 
-            {/* Compact Dropzone Unit */}
+            {/* Dropzone Unit */}
             {!success && !loading && (
               <div
                 onDragOver={handleDragOver}
@@ -488,7 +540,7 @@ export default function Home({ setIsProcessing }) {
                   ref={fileInputRef}
                   onChange={handleFileChange}
                   multiple={activeTab === 'combine'}
-                  accept=".pdf"
+                  accept=".pdf,.jpg,.jpeg,.png,.webp,.bmp,.tiff"
                   className="hidden"
                 />
 
@@ -497,14 +549,14 @@ export default function Home({ setIsProcessing }) {
                 </div>
 
                 <div className="space-y-0.5">
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">Upload your documents</h3>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">Upload your documents or images</h3>
                   <p className="text-xs text-slate-600 dark:text-slate-300/70">
-                    Drag & drop {activeTab === 'combine' ? 'PDF files' : 'a PDF document'} here, or <span className="text-indigo-600 dark:text-amber-300 underline font-semibold">browse</span>
+                    Drag & drop {activeTab === 'combine' ? 'PDFs or Images (JPG, PNG, WEBP, BMP, TIFF)' : 'a PDF or Image file'} here, or <span className="text-indigo-600 dark:text-amber-300 underline font-semibold">browse</span>
                   </p>
                 </div>
 
                 <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 tracking-wider uppercase pt-1">
-                  Max size 200MB • No Watermarks
+                  Supports PDF, JPG, PNG, WEBP, BMP, TIFF • Max 200MB • No Watermarks
                 </p>
               </div>
             )}
@@ -534,6 +586,9 @@ export default function Home({ setIsProcessing }) {
                   {files.map((file, idx) => {
                     const key = `${file.name}-${file.size}-${file.lastModified}`;
                     const previewData = previews[key];
+                    const badge = getExtensionBadge(file.name);
+                    const isImg = file.type.startsWith('image/') || /\.(jpg|jpeg|png|webp|bmp|tiff)$/i.test(file.name);
+
                     return (
                       <div
                         key={key}
@@ -549,19 +604,28 @@ export default function Home({ setIsProcessing }) {
                           </div>
                         )}
                         <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-amber-500/10 border border-indigo-100 dark:border-amber-400/20 flex items-center justify-center shrink-0">
-                          <FileText className="h-4 w-4 text-indigo-600 dark:text-amber-300" />
+                          {isImg ? (
+                            <ImageIcon className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                          ) : (
+                            <FileText className="h-4 w-4 text-indigo-600 dark:text-amber-300" />
+                          )}
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{file.name}</p>
-                          <div className="flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400">
-                            <span>{formatBytes(file.size)}</span>
-                            {previewData && previewData.numPages && (
-                              <>
-                                <span>·</span>
-                                <span className="font-semibold text-slate-700 dark:text-slate-300">{previewData.numPages} Page{previewData.numPages !== 1 ? 's' : ''}</span>
-                              </>
-                            )}
+                        <div className="min-w-0 flex-1 flex items-center gap-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{file.name}</p>
+                            <div className="flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400">
+                              <span>{formatBytes(file.size)}</span>
+                              {previewData && previewData.numPages && !isImg && (
+                                <>
+                                  <span>·</span>
+                                  <span className="font-semibold text-slate-700 dark:text-slate-300">{previewData.numPages} Page{previewData.numPages !== 1 ? 's' : ''}</span>
+                                </>
+                              )}
+                            </div>
                           </div>
+                          <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded border ${badge.style} shrink-0`}>
+                            {badge.label}
+                          </span>
                         </div>
                         {!loading && (
                           <Button
@@ -590,11 +654,18 @@ export default function Home({ setIsProcessing }) {
                   {files.map((file, idx) => {
                     const key = `${file.name}-${file.size}-${file.lastModified}`;
                     const previewState = previews[key];
+                    const badge = getExtensionBadge(file.name);
+
                     return (
-                      <Card.Root key={key} className="aspect-[3/4] rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-slate-950/70 overflow-hidden relative shadow-xs">
-                        <Chip.Root className="absolute top-1.5 left-1.5 bg-slate-900/90 text-white text-[9px] font-bold px-1.5 py-0.5 rounded z-10">
-                          <Chip.Label>#{idx + 1}</Chip.Label>
-                        </Chip.Root>
+                      <Card.Root key={key} className="aspect-[3/4] rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-slate-950/70 overflow-hidden relative shadow-xs group">
+                        <div className="absolute top-1.5 left-1.5 right-1.5 flex items-center justify-between z-10">
+                          <Chip.Root className="bg-slate-900/90 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
+                            <Chip.Label>#{idx + 1}</Chip.Label>
+                          </Chip.Root>
+                          <span className={`text-[8px] font-extrabold px-1 py-0.2 rounded border ${badge.style}`}>
+                            {badge.label}
+                          </span>
+                        </div>
                         <Card.Content className="w-full h-full flex items-center justify-center p-1.5">
                           {!previewState || previewState.status === 'loading' ? (
                             <div className="w-full h-full rounded bg-slate-200/50 dark:bg-white/5 animate-pulse flex items-center justify-center">
@@ -603,7 +674,7 @@ export default function Home({ setIsProcessing }) {
                           ) : previewState.status === 'error' ? (
                             <div className="flex flex-col items-center gap-0.5 text-slate-400">
                               <FileText className="h-4 w-4" />
-                              <span className="text-[9px] font-semibold">PDF Ready</span>
+                              <span className="text-[9px] font-semibold">Ready</span>
                             </div>
                           ) : (
                             <img src={previewState.url} alt={file.name} className="object-contain max-h-full max-w-full rounded shadow-xs" />
@@ -629,7 +700,7 @@ export default function Home({ setIsProcessing }) {
                       : 'bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-amber-400 dark:hover:bg-amber-300 dark:text-slate-950'
                   }`}
                 >
-                  <span>{activeTab === 'combine' ? 'Combine PDF Documents' : 'Compress PDF Now'}</span>
+                  <span>{activeTab === 'combine' ? 'Combine Files into PDF' : 'Compress File Now'}</span>
                   {!isButtonDisabled && <ArrowRight className="h-4 w-4" />}
                 </Button>
                 <Button
@@ -656,10 +727,10 @@ export default function Home({ setIsProcessing }) {
 
                   <div>
                     <h4 className="text-base font-bold text-slate-900 dark:text-white">
-                      {activeTab === 'combine' ? 'Combining PDF Documents...' : 'Executing Ghostscript Optimization...'}
+                      {activeTab === 'combine' ? 'Combining & Converting Files...' : 'Executing Ghostscript Optimization...'}
                     </h4>
                     <p className="text-xs font-semibold text-indigo-600 dark:text-amber-300 mt-0.5">
-                      {progress < 30 ? 'Analyzing page streams...' : progress < 70 ? 'Downsampling image & content streams...' : 'Building optimized output PDF...'}
+                      {progress < 30 ? 'Converting formats & streams...' : progress < 70 ? 'Downsampling image & content streams...' : 'Building optimized output PDF...'}
                     </p>
                   </div>
 
@@ -692,7 +763,7 @@ export default function Home({ setIsProcessing }) {
                   Processing Complete
                 </h2>
                 <p className="text-xs text-slate-600 dark:text-slate-300 max-w-sm mb-6">
-                  Your PDF has been processed and optimized cleanly.
+                  Your document has been combined and optimized cleanly into PDF format.
                 </p>
 
                 {/* Metrics Cards Grid */}
@@ -757,7 +828,7 @@ export default function Home({ setIsProcessing }) {
                       className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-200 dark:hover:bg-white/10 transition-all cursor-pointer"
                     >
                       <RefreshCw className="h-3.5 w-3.5 text-indigo-600 dark:text-amber-300" />
-                      <span>Optimize Another</span>
+                      <span>Process Another</span>
                     </Button>
                   </div>
                 </div>

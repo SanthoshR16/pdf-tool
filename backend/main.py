@@ -180,20 +180,30 @@ def startup_event():
                 existing_ids.append(parts[0])
     logger.info(f"Startup: Existing IDs in store: {existing_ids}")
 
-# Helper to validate and save uploaded files (one-pass validation)
+from PIL import Image
+
+IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tiff"}
+
+# Helper to validate and save uploaded files (one-pass validation with image extension support)
 async def save_upload(file: UploadFile) -> str:
     filename = file.filename or "upload.pdf"
-    if not filename.lower().endswith(".pdf"):
-        raise HTTPException(status_code=400, detail=f"File {filename} is not a PDF")
+    ext = os.path.splitext(filename)[1].lower()
+    
+    if ext != ".pdf" and ext not in IMAGE_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File '{filename}' format ({ext}) is not supported. Supported extensions: PDF, JPG, JPEG, PNG, WEBP, BMP, TIFF."
+        )
         
     temp_id = str(uuid.uuid4())
+    raw_path = os.path.join(TEMP_DIR, f"{temp_id}_raw{ext}")
     temp_path = os.path.join(TEMP_DIR, f"{temp_id}.pdf")
     
     # Save file in chunks to limit RAM usage and validate file size (max 200MB)
     MAX_SIZE = 200 * 1024 * 1024
     total_size = 0
     try:
-        with open(temp_path, "wb") as out_file:
+        with open(raw_path, "wb") as out_file:
             while True:
                 chunk = await file.read(1024 * 1024)  # 1MB chunk
                 if not chunk:
@@ -205,20 +215,56 @@ async def save_upload(file: UploadFile) -> str:
                         detail=f"File {filename} exceeds the maximum size of 200MB"
                     )
                 out_file.write(chunk)
+                
+        if ext in IMAGE_EXTENSIONS:
+            try:
+                with Image.open(raw_path) as img:
+                    if img.mode in ("RGBA", "P", "LA"):
+                        background = Image.new("RGB", img.size, (255, 255, 255))
+                        if img.mode == "RGBA":
+                            background.paste(img, mask=img.split()[3])
+                        else:
+                            background.paste(img.convert("RGBA"), mask=img.convert("RGBA").split()[3])
+                        img_rgb = background
+                    else:
+                        img_rgb = img.convert("RGB")
+                    img_rgb.save(temp_path, "PDF", resolution=100.0)
+            except Exception as img_err:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Failed to process image file '{filename}': {str(img_err)}"
+                )
+        else:
+            os.rename(raw_path, temp_path)
+            
     except HTTPException:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
+        for p in [raw_path, temp_path]:
+            if os.path.exists(p):
+                try:
+                    os.remove(p)
+                except Exception:
+                    pass
         raise
     except Exception as e:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
+        for p in [raw_path, temp_path]:
+            if os.path.exists(p):
+                try:
+                    os.remove(p)
+                except Exception:
+                    pass
         raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
+    finally:
+        if os.path.exists(raw_path):
+            try:
+                os.remove(raw_path)
+            except Exception:
+                pass
         
-    # Verify file header
+    # Verify PDF header
     if not check_pdf_header(temp_path):
         if os.path.exists(temp_path):
             os.remove(temp_path)
-        raise HTTPException(status_code=400, detail=f"File {filename} is not a valid PDF")
+        raise HTTPException(status_code=400, detail=f"File {filename} could not be converted to a valid PDF")
         
     # Verify PDF structure (PdfReader)
     try:
@@ -234,6 +280,7 @@ async def save_upload(file: UploadFile) -> str:
         )
         
     return temp_path
+
 
 @app.get("/api/health")
 def health():
