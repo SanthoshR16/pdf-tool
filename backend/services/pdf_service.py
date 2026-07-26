@@ -120,7 +120,6 @@ async def compress_pdf(input_path: str, output_path: str, level: str = "medium",
         "-dAutoRotatePages=/None",
         "-dCompressPages=true",
         "-dUseFlateCompression=true",
-        "-dNumRenderingThreads=1",
         "-dQUIET",
         "-dBATCH",
         "-dNOPAUSE",
@@ -142,33 +141,17 @@ async def compress_pdf(input_path: str, output_path: str, level: str = "medium",
     except (FileNotFoundError, asyncio.TimeoutError, Exception):
         gs_failed = True
 
-    # If Ghostscript failed or generated a file >= original size, try pypdf stream compression fallback
-    gs_size = os.path.getsize(output_path) if (not gs_failed and os.path.exists(output_path)) else float('inf')
-    
-    if gs_failed or gs_size >= original_size:
-        temp_pypdf_path = output_path + ".pypdf.tmp"
+    # If Ghostscript failed or output missing, fallback to copying original or quick stream compression
+    if gs_failed or not os.path.exists(output_path):
         try:
-            compress_pdf_pypdf(input_path, temp_pypdf_path)
-            pypdf_size = os.path.getsize(temp_pypdf_path)
-            if pypdf_size < original_size and pypdf_size < gs_size:
-                shutil.move(temp_pypdf_path, output_path)
-            elif gs_size < original_size:
-                # Ghostscript produced a smaller file than pypdf, keep Ghostscript output
-                pass
-            else:
-                # If neither produced a smaller file, copy original so size NEVER increases
-                shutil.copyfile(input_path, output_path)
+            compress_pdf_pypdf(input_path, output_path)
         except Exception:
-            if gs_size < original_size:
-                pass
-            else:
-                shutil.copyfile(input_path, output_path)
-        finally:
-            if os.path.exists(temp_pypdf_path):
-                try:
-                    os.remove(temp_pypdf_path)
-                except Exception:
-                    pass
+            shutil.copyfile(input_path, output_path)
+    else:
+        gs_size = os.path.getsize(output_path)
+        # If compressed size is larger than or equal to original, revert to original file so size never increases
+        if gs_size >= original_size:
+            shutil.copyfile(input_path, output_path)
 
     compressed_size = os.path.getsize(output_path)
     saved_bytes = max(0, original_size - compressed_size)

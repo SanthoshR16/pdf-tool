@@ -287,11 +287,8 @@ export default function Home({ setIsProcessing }) {
       }
       const resData = await response.json();
 
-      // Fast path (<5MB)
+      // Fast path
       if (resData.download_url) {
-        const elapsed = Date.now() - startTime;
-        const remaining = Math.max(0, 800 - elapsed);
-        if (remaining > 0) await new Promise(resolve => setTimeout(resolve, remaining));
         setProgress(100);
         setSuccess({
           downloadUrl: `${API_BASE}${resData.download_url}`,
@@ -311,7 +308,7 @@ export default function Home({ setIsProcessing }) {
       let isDone = false;
       let statusData = null;
       while (!isDone) {
-        await new Promise(resolve => setTimeout(resolve, 800));
+        await new Promise(resolve => setTimeout(resolve, 250));
         const statusResponse = await fetch(`${API_BASE}/api/status/${jobId}`);
         if (!statusResponse.ok) {
           const errData = await statusResponse.json().catch(() => ({}));
@@ -401,23 +398,23 @@ export default function Home({ setIsProcessing }) {
         
         {/* Hero Header */}
         <header className="text-center mb-6 flex flex-col items-center animate-fade-in-up">
-          <Chip.Root className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-amber-500/10 border border-indigo-200/60 dark:border-white/15 text-[11px] font-bold text-indigo-700 dark:text-amber-300 shadow-xs mb-3 backdrop-blur-md">
+          <Chip.Root className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/30 text-[11px] font-bold text-indigo-700 dark:text-indigo-300 shadow-xs mb-3 backdrop-blur-md">
             <Sparkles className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 animate-spin" style={{ animationDuration: '4s' }} />
             <Chip.Label>Fast · Local Ghostscript Engine · 100% Free · No Watermarks</Chip.Label>
           </Chip.Root>
 
           <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-2 leading-tight">
-            Combine & Compress <span className="font-editorial italic font-normal text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-violet-600 to-amber-500 dark:from-amber-300 dark:via-amber-400 dark:to-indigo-300">PDF & Images</span>
+            Combine & Compress <span className="font-editorial italic font-normal text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-violet-600 to-indigo-500 dark:from-indigo-300 dark:via-violet-300 dark:to-indigo-200">PDF & Images</span>
           </h1>
 
-          <p className="text-xs md:text-sm font-medium text-slate-600 dark:text-slate-300/80 max-w-lg leading-relaxed">
+          <p className="text-xs md:text-sm font-medium text-slate-600 dark:text-slate-300 max-w-lg leading-relaxed">
             Ultra-fast, private browser PDF suite. Convert, merge, and optimize PDFs, JPGs, PNGs, WEBP, BMP, and TIFF files instantly.
           </p>
 
           {/* Extension Badges */}
           <div className="flex flex-wrap items-center justify-center gap-1.5 mt-3.5">
             {['PDF', 'JPG', 'PNG', 'WEBP', 'BMP', 'TIFF'].map(ext => (
-              <span key={ext} className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-md bg-white/80 dark:bg-white/10 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/10 shadow-xs">
+              <span key={ext} className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-md bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-xs">
                 .{ext.toLowerCase()}
               </span>
             ))}
@@ -425,19 +422,19 @@ export default function Home({ setIsProcessing }) {
         </header>
 
         {/* Main Workspace Card */}
-        <Card.Root className="glass-panel rounded-3xl p-5 md:p-7 border border-slate-200 dark:border-white/15 shadow-2xl transition-all relative overflow-hidden">
+        <Card.Root className="glass-panel rounded-3xl p-5 md:p-7 border border-slate-200 dark:border-slate-800 shadow-2xl transition-all relative overflow-hidden">
           
           {/* Top Segmented Tool Switcher */}
           <Card.Header className="flex justify-center mb-6 p-0 border-none bg-transparent">
-            <div className="inline-flex p-1.5 bg-slate-100/90 dark:bg-slate-950/80 rounded-2xl border border-slate-200 dark:border-white/10 shadow-inner">
+            <div className="inline-flex p-1.5 bg-slate-100 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-inner">
               <Button
                 variant={activeTab === 'combine' ? 'primary' : 'tertiary'}
                 onClick={() => !loading && setActiveTab('combine')}
                 disabled={loading}
                 className={`flex items-center justify-center gap-2 px-7 py-2.5 text-xs font-extrabold rounded-xl transition-all cursor-pointer ${
                   activeTab === 'combine'
-                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white dark:from-amber-400 dark:to-amber-500 dark:text-slate-950 shadow-md scale-[1.02]'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    ? 'bg-indigo-600 text-white dark:bg-indigo-600 dark:text-white shadow-md scale-[1.02]'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 <Layers className="h-4 w-4" />
@@ -449,8 +446,8 @@ export default function Home({ setIsProcessing }) {
                 disabled={loading}
                 className={`flex items-center justify-center gap-2 px-7 py-2.5 text-xs font-extrabold rounded-xl transition-all cursor-pointer ${
                   activeTab === 'compress'
-                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white dark:from-amber-400 dark:to-amber-500 dark:text-slate-950 shadow-md scale-[1.02]'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    ? 'bg-indigo-600 text-white dark:bg-indigo-600 dark:text-white shadow-md scale-[1.02]'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 <Zap className="h-4 w-4" />
@@ -478,8 +475,8 @@ export default function Home({ setIsProcessing }) {
               <div className="animate-fade-in-up">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <Settings className="h-4 w-4 text-indigo-600 dark:text-amber-300" />
-                    <span className="text-xs font-extrabold uppercase tracking-wider text-slate-800 dark:text-slate-200">Compression Profile</span>
+                    <Settings className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                    <span className="text-xs font-extrabold uppercase tracking-wider text-slate-800 dark:text-slate-100">Compression Profile</span>
                   </div>
                   <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Ghostscript Vector & JPEG Optimization</span>
                 </div>
@@ -517,13 +514,13 @@ export default function Home({ setIsProcessing }) {
                       onClick={() => setCompressionLevel(mode.id)}
                       className={`p-4 border text-left rounded-2xl flex flex-col justify-between transition-all cursor-pointer relative hover:scale-[1.01] ${
                         compressionLevel === mode.id
-                          ? 'border-indigo-600 dark:border-amber-400 bg-indigo-500/10 dark:bg-amber-400/10 ring-2 ring-indigo-500/40 dark:ring-amber-400/40 shadow-md'
-                          : 'border-slate-200 dark:border-white/10 bg-slate-50/60 dark:bg-white/[0.02] hover:border-slate-300 dark:hover:border-white/20'
+                          ? 'border-indigo-600 dark:border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/40 ring-2 ring-indigo-500/40 dark:ring-indigo-500/40 shadow-md'
+                          : 'border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/50 hover:border-slate-300 dark:hover:border-slate-700'
                       }`}
                     >
                       {mode.tag && (
                         <Badge.Root className="absolute -top-2.5 right-3">
-                          <Badge.Label className="px-2.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-indigo-600 text-white dark:bg-amber-400 dark:text-slate-950 shadow-xs">
+                          <Badge.Label className="px-2.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-indigo-600 text-white dark:bg-indigo-600 dark:text-white shadow-xs">
                             {mode.tag}
                           </Badge.Label>
                         </Badge.Root>
@@ -533,7 +530,7 @@ export default function Home({ setIsProcessing }) {
                           <Card.Title className="text-xs font-bold text-slate-900 dark:text-white">
                             {mode.name}
                           </Card.Title>
-                          <Chip.Root className="text-[9px] font-semibold px-2 py-0.5 rounded bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300">
+                          <Chip.Root className="text-[9px] font-semibold px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200">
                             <Chip.Label>{mode.dpi}</Chip.Label>
                           </Chip.Root>
                         </div>
@@ -541,13 +538,13 @@ export default function Home({ setIsProcessing }) {
                           {mode.est}
                         </span>
                       </Card.Header>
-                      <Card.Description className="text-[11px] text-slate-600 dark:text-slate-300/80 leading-normal mb-3">
+                      <Card.Description className="text-[11px] text-slate-600 dark:text-slate-300 leading-normal mb-3">
                         {mode.desc}
                       </Card.Description>
-                      <Card.Footer className="pt-2 border-t border-slate-200 dark:border-white/5 flex items-center justify-between p-0 bg-transparent">
+                      <Card.Footer className="pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between p-0 bg-transparent">
                         <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">{mode.badge}</span>
-                        <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all ${compressionLevel === mode.id ? 'border-indigo-600 bg-indigo-600 dark:border-amber-400 dark:bg-amber-400' : 'border-slate-300 dark:border-white/20'}`}>
-                          {compressionLevel === mode.id && <div className="w-1.5 h-1.5 bg-white dark:bg-slate-950 rounded-full" />}
+                        <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all ${compressionLevel === mode.id ? 'border-indigo-600 bg-indigo-600 dark:border-indigo-500 dark:bg-indigo-500' : 'border-slate-300 dark:border-slate-700'}`}>
+                          {compressionLevel === mode.id && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
                         </div>
                       </Card.Footer>
                     </Card.Root>
@@ -565,8 +562,8 @@ export default function Home({ setIsProcessing }) {
                 onClick={handleBrowseFiles}
                 className={`relative border-2 border-dashed rounded-3xl py-7 md:py-9 px-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center space-y-3 ${
                   isDragging
-                    ? 'border-indigo-600 bg-indigo-500/10 dark:border-amber-400 dark:bg-amber-400/10 scale-[1.01]'
-                    : 'border-slate-300 dark:border-white/15 hover:border-indigo-500 dark:hover:border-amber-400 bg-slate-50/70 dark:bg-slate-950/40 hover:bg-indigo-50/30 dark:hover:bg-white/[0.02]'
+                    ? 'border-indigo-600 bg-indigo-500/10 dark:border-indigo-400 dark:bg-indigo-500/20 scale-[1.01]'
+                    : 'border-slate-300 dark:border-slate-800 hover:border-indigo-500 dark:hover:border-indigo-400 bg-slate-50/70 dark:bg-slate-900/60 hover:bg-indigo-50/30 dark:hover:bg-slate-800/60'
                 } ${loading ? 'pointer-events-none opacity-60' : ''}`}
               >
                 <input
@@ -578,7 +575,7 @@ export default function Home({ setIsProcessing }) {
                   className="hidden"
                 />
 
-                <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/15 shadow-md text-indigo-600 dark:text-amber-300 transition-transform duration-200 group-hover:scale-110">
+                <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-md text-indigo-600 dark:text-indigo-400 transition-transform duration-200 group-hover:scale-110">
                   <Upload className="h-7 w-7" />
                 </div>
 
@@ -586,8 +583,8 @@ export default function Home({ setIsProcessing }) {
                   <h3 className="text-base md:text-lg font-extrabold text-slate-900 dark:text-white">
                     Drop your files here
                   </h3>
-                  <p className="text-xs text-slate-600 dark:text-slate-300/80">
-                    Drag & drop {activeTab === 'combine' ? 'PDFs or Images (JPG, PNG, WEBP, BMP, TIFF)' : 'a PDF or Image file'} here, or <span className="text-indigo-600 dark:text-amber-300 underline font-extrabold">browse computer</span>
+                  <p className="text-xs text-slate-600 dark:text-slate-300">
+                    Drag & drop {activeTab === 'combine' ? 'PDFs or Images (JPG, PNG, WEBP, BMP, TIFF)' : 'a PDF or Image file'} here, or <span className="text-indigo-600 dark:text-indigo-400 underline font-extrabold">browse computer</span>
                   </p>
                 </div>
 
@@ -613,14 +610,14 @@ export default function Home({ setIsProcessing }) {
                     <Button
                       variant="tertiary"
                       onClick={handleBrowseFiles}
-                      className="text-xs font-bold text-indigo-600 dark:text-amber-300 hover:underline flex items-center gap-1.5 cursor-pointer border border-indigo-200 dark:border-amber-400/30 px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-amber-500/10 hover:scale-[1.02] transition-transform"
+                      className="text-xs font-bold text-indigo-600 dark:text-indigo-300 hover:underline flex items-center gap-1.5 cursor-pointer border border-indigo-200 dark:border-indigo-500/30 px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-500/15 hover:scale-[1.02] transition-transform"
                     >
                       <Plus className="h-3.5 w-3.5" /> Add More Files
                     </Button>
                   )}
                 </div>
 
-                <div className="border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden divide-y divide-slate-200 dark:divide-white/5 bg-slate-50/80 dark:bg-slate-950/60 shadow-xs">
+                <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden divide-y divide-slate-200 dark:divide-slate-800 bg-slate-50/80 dark:bg-slate-900/70 shadow-xs">
                   {files.map((file, idx) => {
                     const key = `${file.name}-${file.size}-${file.lastModified}`;
                     const previewData = previews[key];
@@ -634,23 +631,23 @@ export default function Home({ setIsProcessing }) {
                         onDragStart={(e) => handleDragStart(e, idx)}
                         onDragOver={(e) => handleItemDragOver(e, idx)}
                         onDragEnd={handleDragEnd}
-                        className="flex items-center gap-3.5 px-4 py-3 hover:bg-slate-100/80 dark:hover:bg-white/[0.04] transition-colors select-none group"
+                        className="flex items-center gap-3.5 px-4 py-3 hover:bg-slate-100/80 dark:hover:bg-slate-800/50 transition-colors select-none group"
                       >
                         {activeTab === 'combine' && (
-                          <div className="cursor-grab text-slate-400 dark:text-slate-600 hover:text-slate-700 dark:hover:text-slate-300 transition-colors">
+                          <div className="cursor-grab text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors">
                             <GripVertical className="h-4 w-4" />
                           </div>
                         )}
-                        <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-amber-500/10 border border-indigo-100 dark:border-amber-400/20 flex items-center justify-center shrink-0 shadow-xs">
+                        <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-500/15 border border-indigo-100 dark:border-indigo-500/30 flex items-center justify-center shrink-0 shadow-xs">
                           {isImg ? (
                             <ImageIcon className="h-4.5 w-4.5 text-emerald-600 dark:text-emerald-400" />
                           ) : (
-                            <FileText className="h-4.5 w-4.5 text-indigo-600 dark:text-amber-300" />
+                            <FileText className="h-4.5 w-4.5 text-indigo-600 dark:text-indigo-300" />
                           )}
                         </div>
                         <div className="min-w-0 flex-1 flex items-center gap-3">
                           <div className="min-w-0 flex-1">
-                            <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{file.name}</p>
+                            <p className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">{file.name}</p>
                             <div className="flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400">
                               <span>{formatBytes(file.size)}</span>
                               {previewData && previewData.numPages && !isImg && (
@@ -695,7 +692,7 @@ export default function Home({ setIsProcessing }) {
                     const badge = getExtensionBadge(file.name);
 
                     return (
-                      <Card.Root key={key} className="aspect-[3/4] rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100/80 dark:bg-slate-950/70 overflow-hidden relative shadow-xs hover:border-indigo-400 dark:hover:border-amber-400 transition-all">
+                      <Card.Root key={key} className="aspect-[3/4] rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100/80 dark:bg-slate-900/80 overflow-hidden relative shadow-xs hover:border-indigo-400 dark:hover:border-indigo-400 transition-all">
                         <div className="absolute top-2 left-2 right-2 flex items-center justify-between z-10">
                           <Chip.Root className="bg-slate-900/90 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-md shadow-xs">
                             <Chip.Label>#{idx + 1}</Chip.Label>
@@ -706,7 +703,7 @@ export default function Home({ setIsProcessing }) {
                         </div>
                         <Card.Content className="w-full h-full flex items-center justify-center p-2">
                           {!previewState || previewState.status === 'loading' ? (
-                            <div className="w-full h-full rounded-xl bg-slate-200/50 dark:bg-white/5 animate-pulse flex items-center justify-center">
+                            <div className="w-full h-full rounded-xl bg-slate-200/50 dark:bg-slate-800 animate-pulse flex items-center justify-center">
                               <RefreshCw className="h-4 w-4 text-slate-400 animate-spin" />
                             </div>
                           ) : previewState.status === 'error' ? (
@@ -727,15 +724,15 @@ export default function Home({ setIsProcessing }) {
 
             {/* Main Action Bar */}
             {files.length > 0 && !success && !loading && (
-              <Card.Footer className="flex flex-col sm:flex-row gap-3.5 pt-5 border-t border-slate-200 dark:border-white/10 animate-fade-in-up p-0 bg-transparent">
+              <Card.Footer className="flex flex-col sm:flex-row gap-3.5 pt-5 border-t border-slate-200 dark:border-slate-800 animate-fade-in-up p-0 bg-transparent">
                 <Button
                   variant="primary"
                   onClick={handleProcess}
                   disabled={isButtonDisabled}
                   className={`flex-1 rounded-2xl py-3.5 px-6 text-sm font-extrabold transition-all flex items-center justify-center gap-2.5 cursor-pointer shadow-lg hover:scale-[1.01] active:scale-[0.99] ${
                     isButtonDisabled
-                      ? 'bg-slate-200 dark:bg-white/10 text-slate-400 dark:text-slate-500 cursor-not-allowed shadow-none'
-                      : 'bg-gradient-to-r from-indigo-600 via-violet-600 to-indigo-700 text-white dark:from-amber-400 dark:to-amber-500 dark:text-slate-950 shadow-indigo-500/25 dark:shadow-amber-500/20'
+                      ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed shadow-none'
+                      : 'bg-indigo-600 hover:bg-indigo-500 text-white dark:bg-indigo-600 dark:hover:bg-indigo-500 dark:text-white shadow-indigo-500/25'
                   }`}
                 >
                   <span>{activeTab === 'combine' ? 'Combine Files into PDF' : 'Compress File Now'}</span>
@@ -744,7 +741,7 @@ export default function Home({ setIsProcessing }) {
                 <Button
                   variant="tertiary"
                   onClick={startOver}
-                  className="px-6 py-3.5 rounded-2xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 transition-colors cursor-pointer"
+                  className="px-6 py-3.5 rounded-2xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 transition-colors cursor-pointer"
                 >
                   Clear Workspace
                 </Button>
@@ -756,18 +753,18 @@ export default function Home({ setIsProcessing }) {
               <div className="py-12 flex flex-col items-center justify-center text-center animate-fade-in-up">
                 <div className="w-full max-w-md space-y-5">
                   <div className="relative w-16 h-16 mx-auto">
-                    <div className="absolute inset-0 rounded-full border-4 border-slate-200 dark:border-white/10" />
-                    <div className="absolute inset-0 rounded-full border-4 border-t-indigo-600 dark:border-t-amber-400 animate-spin" />
+                    <div className="absolute inset-0 rounded-full border-4 border-slate-200 dark:border-slate-800" />
+                    <div className="absolute inset-0 rounded-full border-4 border-t-indigo-600 dark:border-t-indigo-400 animate-spin" />
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <RefreshCw className="h-6 w-6 text-indigo-600 dark:text-amber-400 animate-pulse" />
+                      <RefreshCw className="h-6 w-6 text-indigo-600 dark:text-indigo-400 animate-pulse" />
                     </div>
                   </div>
 
                   <div>
                     <h4 className="text-lg font-extrabold text-slate-900 dark:text-white">
-                      {activeTab === 'combine' ? 'Combining & Converting Files...' : 'Executing Ghostscript Optimization...'}
+                      {activeTab === 'combine' ? 'Combining Files...' : 'Executing Ghostscript Optimization...'}
                     </h4>
-                    <p className="text-xs font-bold text-indigo-600 dark:text-amber-300 mt-1">
+                    <p className="text-xs font-bold text-indigo-600 dark:text-indigo-300 mt-1">
                       {progress < 30 ? 'Converting formats & vector streams...' : progress < 70 ? 'Downsampling image & content streams...' : 'Building optimized output PDF...'}
                     </p>
                   </div>
@@ -777,9 +774,9 @@ export default function Home({ setIsProcessing }) {
                       <span>Processing Pipeline</span>
                       <span>{progress}%</span>
                     </div>
-                    <div className="w-full bg-slate-200 dark:bg-white/5 rounded-full h-3 overflow-hidden border border-slate-300 dark:border-white/10 relative">
+                    <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-3 overflow-hidden border border-slate-300 dark:border-slate-700 relative">
                       <div
-                        className="bg-gradient-to-r from-indigo-600 to-amber-400 h-full rounded-full transition-all duration-300 ease-out"
+                        className="bg-indigo-600 dark:bg-indigo-500 h-full rounded-full transition-all duration-300 ease-out"
                         style={{ width: `${progress}%` }}
                       />
                     </div>
@@ -806,9 +803,9 @@ export default function Home({ setIsProcessing }) {
 
                 {/* Metrics Cards Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-xl mb-7">
-                  <Card.Root className="bg-slate-50/80 dark:bg-slate-950/70 border border-slate-200 dark:border-white/10 p-4.5 rounded-2xl text-left shadow-xs">
+                  <Card.Root className="bg-slate-50/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 p-4.5 rounded-2xl text-left shadow-xs">
                     <div className="flex items-center gap-2 mb-2.5">
-                      <BarChart3 className="h-4 w-4 text-indigo-600 dark:text-amber-300" />
+                      <BarChart3 className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                       <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-800 dark:text-slate-200">Compression Summary</span>
                     </div>
                     <div className="flex items-center justify-between">
@@ -817,13 +814,13 @@ export default function Home({ setIsProcessing }) {
                         <span className="text-sm font-bold text-slate-400 line-through">{formatBytes(success.originalSize)}</span>
                       </div>
                       <div className="text-right">
-                        <span className="text-[10px] font-bold text-indigo-600 dark:text-amber-300 block">Optimized</span>
+                        <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-300 block">Optimized</span>
                         <span className="text-2xl font-extrabold text-slate-900 dark:text-white">{formatBytes(success.compressedSize || success.originalSize)}</span>
                       </div>
                     </div>
                   </Card.Root>
 
-                  <Card.Root className="bg-slate-50/80 dark:bg-slate-950/70 border border-slate-200 dark:border-white/10 p-4.5 rounded-2xl text-left shadow-xs">
+                  <Card.Root className="bg-slate-50/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 p-4.5 rounded-2xl text-left shadow-xs">
                     <div className="flex items-center gap-2 mb-2.5">
                       <Bolt className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                       <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-800 dark:text-slate-200">Storage Saved</span>
@@ -845,7 +842,7 @@ export default function Home({ setIsProcessing }) {
                       setShowToast(true);
                       await handleDownload(success.downloadUrl, success.filename);
                     }}
-                    className="w-full py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-indigo-700 text-white dark:from-amber-400 dark:to-amber-500 dark:text-slate-950 text-sm font-extrabold flex items-center justify-center gap-2.5 cursor-pointer shadow-xl hover:scale-[1.01] active:scale-[0.99]"
+                    className="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white dark:bg-indigo-600 dark:hover:bg-indigo-500 text-sm font-extrabold flex items-center justify-center gap-2.5 cursor-pointer shadow-xl hover:scale-[1.01] active:scale-[0.99]"
                   >
                     <Download className="h-5 w-5" />
                     <span>Download Optimized PDF</span>
@@ -855,7 +852,7 @@ export default function Home({ setIsProcessing }) {
                     <Button
                       variant="secondary"
                       onClick={() => copyDownloadLink(success.downloadUrl)}
-                      className="flex items-center justify-center gap-2 py-3 rounded-2xl text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-200 dark:hover:bg-white/10 transition-all cursor-pointer"
+                      className="flex items-center justify-center gap-2 py-3 rounded-2xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all cursor-pointer"
                     >
                       {copiedLink ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
                       <span>{copiedLink ? 'Link Copied!' : 'Copy Share Link'}</span>
@@ -863,9 +860,9 @@ export default function Home({ setIsProcessing }) {
                     <Button
                       variant="tertiary"
                       onClick={startOver}
-                      className="flex items-center justify-center gap-2 py-3 rounded-2xl text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-200 dark:hover:bg-white/10 transition-all cursor-pointer"
+                      className="flex items-center justify-center gap-2 py-3 rounded-2xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all cursor-pointer"
                     >
-                      <RefreshCw className="h-4 w-4 text-indigo-600 dark:text-amber-300" />
+                      <RefreshCw className="h-4 w-4 text-indigo-600 dark:text-indigo-300" />
                       <span>Process Another</span>
                     </Button>
                   </div>

@@ -57,7 +57,20 @@ def get_job_status(job_id: str) -> dict:
             pass
     return None
 
-gs_lock = asyncio.Lock()
+# Helper functions to get and update job status
+def get_job_status(job_id: str) -> dict:
+    try:
+        uuid.UUID(job_id)
+    except ValueError:
+        return None
+    path = os.path.join(TEMP_DIR, f"job_{job_id}.json")
+    if os.path.exists(path):
+        try:
+            with open(path, "r") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return None
 
 def update_job_status(job_id: str, status: str, progress: int = 0, download_url: str = None, error_message: str = None, **kwargs):
     path = os.path.join(TEMP_DIR, f"job_{job_id}.json")
@@ -89,15 +102,12 @@ def merge_pdfs_sync(temp_paths: List[str], output_path: str):
 # Background worker functions
 def run_combine_job(job_id: str, temp_paths: List[str], output_path: str, output_id: str):
     try:
-        update_job_status(job_id, "processing", progress=0)
-        total_files = len(temp_paths)
+        update_job_status(job_id, "processing", progress=10)
         from pypdf import PdfWriter
         writer = PdfWriter()
         try:
-            for idx, path in enumerate(temp_paths):
+            for path in temp_paths:
                 writer.append(path)
-                progress = int(((idx + 1) / total_files) * 100)
-                update_job_status(job_id, "processing", progress=min(progress, 99))
             writer.write(output_path)
         finally:
             writer.close()
@@ -124,9 +134,8 @@ async def run_compress_job(job_id: str, temp_path: str, output_path: str, output
     start_time = time.time()
     logger.info(f"[Compress Job {job_id}] Started compression at level {level}")
     try:
-        update_job_status(job_id, "processing", progress=0)
-        async with gs_lock:
-            stats = await compress_pdf(temp_path, output_path, level=level)
+        update_job_status(job_id, "processing", progress=10)
+        stats = await compress_pdf(temp_path, output_path, level=level)
         update_job_status(job_id, "done", progress=100, download_url=f"/api/download/{output_id}", **(stats or {}))
     except Exception as e:
         logger.error(f"Error in compress job {job_id}: {e}")
@@ -311,9 +320,9 @@ async def combine(background_tasks: BackgroundTasks, files: List[UploadFile] = F
     output_filename = f"{output_id}_combined.pdf"
     output_path = os.path.join(DOWNLOADS_DIR, output_filename)
     
-    # Fast path for files < 5MB
+    # Fast path for files < 50MB
     total_size = sum(os.path.getsize(p) for p in temp_paths)
-    if total_size < 5 * 1024 * 1024:
+    if total_size < 50 * 1024 * 1024:
         start_time = time.time()
         logger.info(f"[Combine Fast Path] Merging {len(temp_paths)} files ({total_size / 1024 / 1024:.2f}MB)")
         try:
@@ -352,14 +361,13 @@ async def compress(background_tasks: BackgroundTasks, file: UploadFile = File(..
     output_filename = f"{output_id}_compressed.pdf"
     output_path = os.path.join(DOWNLOADS_DIR, output_filename)
     
-    # Fast path for file < 5MB
+    # Fast path for file < 20MB
     file_size = os.path.getsize(temp_path)
-    if file_size < 5 * 1024 * 1024:
+    if file_size < 20 * 1024 * 1024:
         start_time = time.time()
         logger.info(f"[Compress Fast Path] Compressing {file.filename} ({file_size / 1024 / 1024:.2f}MB) at level {level}")
         try:
-            async with gs_lock:
-                stats = await compress_pdf(temp_path, output_path, level=level)
+            stats = await compress_pdf(temp_path, output_path, level=level)
             duration = time.time() - start_time
             logger.info(f"[Compress Fast Path] Completed in {duration:.4f} seconds")
             res = {"download_url": f"/api/download/{output_id}"}
